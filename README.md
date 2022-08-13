@@ -1,0 +1,2 @@
+# boobot
+Boobot initial setup
