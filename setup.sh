@@ -20,10 +20,20 @@ then
     echo "Installing Adafruit_GPIO ...\n"
     echo ""
     sudo apt-get install python3-pip
-    pip3 install adafruit-circuitpython-ssd1306
+    sudo pip3 install adafruit-circuitpython-ssd1306
     sudo apt-get install python3-pil
     sudo apt-get install python3-numpy
+    sudo python3 -m pip install --force-reinstall adafruit-blinka
     echo "OLED Drivers installation done!"
+fi
+echo " "
+read -p "Create Startup Script? Y/n... " -n 1 -r
+echo " "
+if [[ ! $REPLY =~ ^[Nn]$ ]]
+then
+    echo "Setting up Script..."
+    sudo apt-get install emacs
+    echo "Script Ready! "
 fi
 echo " "
 echo "DONE!"
