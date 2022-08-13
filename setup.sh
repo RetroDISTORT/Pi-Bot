@@ -19,8 +19,10 @@ then
     mkdir ./files/OLED
     echo "Installing Adafruit_GPIO ...\n"
     echo ""
-    git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git ./files/OLED
-    sudo python ./files/OLED/setup.py install
+    sudo apt-get install python3-pip
+    pip3 install adafruit-circuitpython-ssd1306
+    sudo apt-get install python3-pil
+    sudo apt-get install python3-numpy
     echo "OLED Drivers installation done!"
 fi
 echo " "
