@@ -14,9 +14,12 @@ echo " "
 read -p "Install OLED Drivers? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
-    echo "Installing ..."
-    git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git ./files
-    echo "OLED Drivers installation done "
+    echo "Installing ...\n"
+    mkdir ./files/OLED
+    echo "Installing Adafruit_GPIO ...\n"
+    pip3 install Adafruit_GPIO
+    git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git ./files/OLED
+    echo "OLED Drivers installation done!"
 fi
 echo " "
 echo "DONE!"
