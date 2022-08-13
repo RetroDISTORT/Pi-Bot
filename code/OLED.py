@@ -22,7 +22,7 @@ BORDER = 5
 i2c = busio.I2C(board.SCL, board.SDA)
 oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
 font = ImageFont.load_default()
-text = "> retro@"+(s.getsockname()[0])
+text = ">>retro@"+(s.getsockname()[0])
 
 image = Image.new('1', (oled.width, oled.height))
 draw = ImageDraw.Draw(image)

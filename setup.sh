@@ -32,7 +32,7 @@ echo " "
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo "Setting up Script..."
-    sudo apt-get install emacs
+    sudo cp ./code/rc.local /etc/rc.local
     echo "Script Ready! "
 fi
 echo " "
