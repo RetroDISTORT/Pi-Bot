@@ -1,4 +1,11 @@
 #!/bin/bash
+echo "Going headless: "
+echo "Enable ssh using the "
+echo ""
+echo ""
+echo ""
+echo ""
+echo ""
 echo "Starting setup..."
 echo " "
 echo "Creating file directories"
