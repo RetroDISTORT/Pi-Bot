@@ -1,15 +1,15 @@
 #!/bin/bash
 echo "Starting setup..."
 echo " "
-echo "Creating file directories"
+echo "Creating files directory"
 mkdir ./files
-mkdir ./code/mic
 read -p "apt-get update & upgrade? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
-    echo "Getting update and upgrade..."
+    echo "Updating..."
     sudo apt-get -y update
+    echo "Upgrading..."
     sudo apt-get -y upgrade
     echo " "
     echo "Update and Upgrade done "
@@ -25,6 +25,42 @@ then
     echo "Emacs installation done "
 fi
 echo " "
+read -p "Install MAX98357 I2S Speaker AMP? Y/n... " -n 1 -r
+if [[ ! $REPLY =~ ^[Nn]$ ]]
+then
+    echo " "
+    echo "Installing necessary drivers..."
+    sudo echo "" > '/etc/modprobe.d/raspi-blacklist.conf'
+    sudo cp ./code/misc/modules /etc/
+    sudo apt-get install alsa-utils
+    sudo cp ./code/misc/asound.conf /etc/asound.conf
+    sed -i 's/dtparam=audio=on/#dtparam=audio=on/' /boot/config.txt
+    if grep -q "dtoverlay=hifiberry-dac" "$/boot/config.txt"; then
+	echo "I2S overlays were edited before, re-running script?" # SomeString was found
+    else
+	sudo echo "" >> $/boot/config.txt
+	sudo echo "dtoverlay=hifiberry-dac" >> $/boot/config.txt
+	sudo echo "dtoverlay=i2s-mmap" >> $/boot/config.txt
+	echo "I2S overlays added!"
+    fi
+    echo "MAX98357 driver installation done!"
+    echo "Instalation guide from:"
+    echo "https://bytesnbits.co.uk/raspberry-pi-i2s-sound-output/"
+fi
+echo " "
+read -p "Install SPH0645 I2S MIC? Y/n... " -n 1 -r
+if [[ ! $REPLY =~ ^[Nn]$ ]]
+then
+    echo " "
+    echo "Installing necessary drivers..."
+    mkdir ./mic
+    sudo pip3 install --upgrade adafruit-python-shell
+    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py ./mic
+    sudo python3 ./mic/i2smic.py
+    rm -r ./mic
+    echo "SPH0645 driver installation done!"
+fi
+echo " "
 read -p "Install OLED Drivers? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -38,7 +74,7 @@ then
     sudo pip3 install adafruit-circuitpython-ssd1306
     sudo apt-get install python3-pil
     sudo apt-get install python3-numpy
-    sudo python3 -m pip install --force-reinstall adafruit-blinka
+    sudo python3 -m pip install --force-reinstall adafruit-blinka # Required for board and digitalio
     echo "OLED driver installation done!"
 fi
 echo " "
@@ -67,41 +103,34 @@ then
     echo "INA219 driver installation done!"
 fi
 echo " "
-read -p "Install MAX98357 I2S Speaker AMP? Y/n... " -n 1 -r
-if [[ ! $REPLY =~ ^[Nn]$ ]]
-then
-    echo " "
-    echo "Installing necessary drivers..."
-    curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash
-    echo "INA219 driver installation done!"
-fi
-echo " "
-read -p "Install SPH0645 I2S MIC? Y/n... " -n 1 -r
-if [[ ! $REPLY =~ ^[Nn]$ ]]
-then
-    echo " "
-    echo "Installing necessary drivers..."
-    sudo pip3 install --upgrade adafruit-python-shell
-    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py ./code/mic
-    sudo python3 ./code/mic/i2smic.py
-    echo "SPH0645 driver installation done!"
-fi
-echo " "
+<<<<<<< HEAD
 read -p "Install PCA9685 Servo Controller? Y/n... " -n 1 -r
+=======
+read -p "Install MAX98357 I2S Speaker AMP? Y/n... " -n 1 -r
+>>>>>>> parent of 6be2346 (updates)
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
+<<<<<<< HEAD
     sudo pip3 install adafruit-circuitpython-pca9685
     sudo pip3 install adafruit-circuitpython-servokit
     echo "PCA9685 driver installation done!"
 fi
 echo " "
 read -p "Install MPU9250 Accel/Gyro/Mag?(NOT WORKING) Y/n... " -n 1 -r
+=======
+    curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash
+    echo "INA219 driver installation done!"
+fi
+echo " "
+read -p "Install SPH0645 I2S MIC? Y/n... " -n 1 -r
+>>>>>>> parent of 6be2346 (updates)
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
+<<<<<<< HEAD
     #sudo pip install FaBo9Axis_MPU9250
     echo "MPU9250 driver installation done!"
 fi
@@ -129,6 +158,12 @@ then
     sudo mv ./code/misc/dnsmasq.conf /etc/dnsmasq.conf
     sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
     echo "Hotspot installation done! (Reboot required to enable)"
+=======
+    sudo pip3 install --upgrade adafruit-python-shell
+    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py ./code/mic
+    sudo python3 ./code/mic/i2smic.py
+    echo "SPH0645 driver installation done!"
+>>>>>>> parent of 6be2346 (updates)
 fi
 echo " "
 read -p "Create Startup Script? Y/n... " -n 1 -r
