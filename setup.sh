@@ -103,34 +103,21 @@ then
     echo "INA219 driver installation done!"
 fi
 echo " "
-<<<<<<< HEAD
 read -p "Install PCA9685 Servo Controller? Y/n... " -n 1 -r
-=======
-read -p "Install MAX98357 I2S Speaker AMP? Y/n... " -n 1 -r
->>>>>>> parent of 6be2346 (updates)
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
-<<<<<<< HEAD
     sudo pip3 install adafruit-circuitpython-pca9685
     sudo pip3 install adafruit-circuitpython-servokit
     echo "PCA9685 driver installation done!"
 fi
 echo " "
 read -p "Install MPU9250 Accel/Gyro/Mag?(NOT WORKING) Y/n... " -n 1 -r
-=======
-    curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash
-    echo "INA219 driver installation done!"
-fi
-echo " "
-read -p "Install SPH0645 I2S MIC? Y/n... " -n 1 -r
->>>>>>> parent of 6be2346 (updates)
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
-<<<<<<< HEAD
     #sudo pip install FaBo9Axis_MPU9250
     echo "MPU9250 driver installation done!"
 fi
@@ -158,12 +145,6 @@ then
     sudo mv ./code/misc/dnsmasq.conf /etc/dnsmasq.conf
     sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
     echo "Hotspot installation done! (Reboot required to enable)"
-=======
-    sudo pip3 install --upgrade adafruit-python-shell
-    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py ./code/mic
-    sudo python3 ./code/mic/i2smic.py
-    echo "SPH0645 driver installation done!"
->>>>>>> parent of 6be2346 (updates)
 fi
 echo " "
 read -p "Create Startup Script? Y/n... " -n 1 -r
