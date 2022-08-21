@@ -1,1 +1,1 @@
-exec(open('OLED.py').read()) #Run OLED script
+exec(open('~/Documents/github/boobot/OLED.py').read()) #Run OLED script
