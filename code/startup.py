@@ -6,8 +6,9 @@ import digitalio
 from PIL import Image, ImageDraw, ImageFont
 
 import socket
+import time
 
-
+time.sleep(5) # Sleep for 3 seconds
 hostname=socket.gethostname()
 IPAddr=socket.gethostbyname(hostname)
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
