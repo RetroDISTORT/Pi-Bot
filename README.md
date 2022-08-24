@@ -1,6 +1,8 @@
 # Pi Bot
 This project is a robot for the Raspberry pi platform. This robot that uses the rasberry pi as the brains of the device.
 
+![robot](/images/photo2.jpg)
+
 ## Features
 - **Camera:** 5MP, 1080p
 - **Microphone:** I2S MEMS microphone with a range of about 50Hz - 15KHz, good for just about all general audio recording/detection.
@@ -21,3 +23,9 @@ On a terminal window use the following (PLEASE USE A FRESH INSTALL OF RASBIAN TO
 ```
 git clone https://github.com/RetroDISTORT/boobot.git
 ```
+
+## PCB
+![robot](/images/PCB_3D.png)
+
+## Circuit
+![robot](/images/PCB_Wiring.png)
