@@ -6,20 +6,20 @@ Some of the potential uses for this robot are a bluetooth speaker, mini linux PC
 ![robot](/images/photo2.jpg)
 
 ## Features
-- **Camera:** 5MP, 1080p
+- **Camera:** 5MP, 1080p at 30fps. Used for remote control, automation, security, webcam, etc. 
 - **Microphone:** I2S MEMS microphone with a range of about 50Hz - 15KHz, good for just about all general audio recording/detection.
-- **Speaker:** This small mono class D amplifier able to deliver 1.6 Watts of power into a 8 ohm impedance speaker
-- **Servos:** Output for 9 separate servos. These include a 180 degree servo for the camera and 2 360 servos for the wheels.
-- **Accelerometer:** 3-axis accelerometer
-- **Gyroscope:** 3-axis gyroscope
-- **Magnetometer:** 3-axis magnetometer
-- **Barometer:** Environmental sensor with temperature, barometric pressure with ±1 meter accuracy.
-- **Addressable RGB LEDs:** Three primary color can achieve 256 brightness with a refresh rate is 30fps,
-- **OLED Display:** Display made of 128x64 individual white OLED pixels. Display used for notifications and AI status
+- **Speaker:** This small mono class D amplifier able to deliver 1.6 Watts of power into a 8 ohm impedance speaker. Good for playing music, videocalls, Bluetooth speaker and notifications.
+- **Servos:** Output for 9 separate servos. These include a 180 degree servo for the camera and 2 360 servos for the wheels. Servos are powered through a power supply independent from rasperry pi's
+- **Accelerometer:** 3-axis accelerometer. Used for collision and movement detection.
+- **Gyroscope:** 3-axis gyroscope. Used to for detecting inclination and orientation.
+- **Magnetometer:** 3-axis magnetometer. Used as an internal compass for diractioning and orientation.
+- **Barometer:** Environmental sensor with temperature, barometric pressure with ±1 meter accuracy. Used to determine current height.
+- **Addressable RGB LEDs:** Three primary color can achieve 256 brightness with a refresh rate is 30fps. Good for notifications, camera lights, and look cool overall!
+- **OLED Display:** Display made of 128x64 individual white OLED pixels. Usefull for notifications and AI status.
 - **Menu Buttons:** 4 tactile buttons. Three are used for menu navigation and the third is used for waking up from power off mode. 
-- **PWM Fan:** 40mm fan with dynamic speed control
+- **PWM Fan:** 40mm fan with dynamic speed control for cooling internal components.
 - **Modular Port:** Used to connect to 2 other devices through SPI.
-- **LiPo:** 2 flat top 26650 LiPo batteries in series. Each LiPo with the capacity of 6800mAh. Buck Converter can take up to 16V but external charger is required. Batteries are swappable and have a 2S BMS system available. 
+- **LiPo:** 2 flat top 26650 LiPo batteries in series. Each LiPo with the capacity of 6800mAh. Buck Converter can take up to 16V but external charger is required. Batteries are swappable and have a 2S BMS system available.
 - **Current Charge Sensor:** Includes a current and voltage meter to accuratly detect if charging/discharging and current charge. 
 
 
