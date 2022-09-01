@@ -157,4 +157,14 @@ then
     echo "Script Ready! "
 fi
 echo " "
+echo " "
+read -p "Install additional drivers? Y/n... " -n 1 -r
+if [[ ! $REPLY =~ ^[Nn]$ ]]
+then
+    echo " "
+    echo "Installing keyboard..."
+    sudo pip3 install keyboard
+    echo "INA219 driver installation done!"
+fi
+echo " "
 echo "DONE!"
