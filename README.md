@@ -1,7 +1,16 @@
 # Pi Bot
-This open source project is a robot for the Raspberry pi platform. Boobot or Pi Bot is mainly designed to be a hobbyist playground. This project was designed to contain basic components for a robot. 
+This open source project is a robot for the [Raspberry pi](https://www.raspberrypi.com/) platform. Boobot or Pi Bot is mainly designed to be a hobbyist playground. This project was designed to contain basic components for a robot. 
 
 Some of the potential uses for this robot are a bluetooth speaker, mini linux PC, server with UPS and status, machine learning project, AI assistant, Steam Link reciever, retro gaming console, media player, home automation, and much more! With the inclusion of the modular SPI port on the bottom, it can connect and control other devices like a smart automatic carpet vacuum! 
+
+This project is a continuation of [BOOBOT v0.2.0](https://github.com/Shizcow/BooBot/tree/v0.2.0). A class project designed to serve a twitch live stream and controlled by chat.
+
+Boobot hat is compatible with the new Raspberry Pi Pinout:
+Raspberry Pi B+
+Raspberry Pi 2
+Raspberry Pi 3
+Raspberry Pi 4
+Raspberry Pi Zero
 
 ![robot](/images/photo2.jpg)
 
@@ -34,6 +43,8 @@ Follow the installation options for all the available hardware on your robot.
 After the instalation, open the code folder to use test the instalation.
 
 ## PCB
+The PCB was designed using [EasyEDA](https://easyeda.com/) and printed through [JLCPCB](https://jlcpcb.com/). The design contains the main hat board, modular port, and the front panel board.
+
 ![robot](/images/PCB_3D.png)
 
 ## Circuit
