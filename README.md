@@ -27,7 +27,11 @@ Some of the potential uses for this robot are a bluetooth speaker, mini linux PC
 On a terminal window use the following (PLEASE USE A FRESH INSTALL OF RASBIAN TO PREVENT SOUND SYSTEM ERRORS)
 ```
 git clone https://github.com/RetroDISTORT/boobot.git
+cd boobot
+./setup.sh
 ```
+Follow the installation options for all the available hardware on your robot.
+After the instalation, open the code folder to use test the instalation.
 
 ## PCB
 ![robot](/images/PCB_3D.png)
