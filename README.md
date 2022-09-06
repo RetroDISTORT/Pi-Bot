@@ -42,14 +42,25 @@ cd boobot
 Follow the installation options for all the available hardware on your robot.
 After the instalation, open the code folder to use test the instalation.
 
-## PCB
-The PCB was designed using [EasyEDA](https://easyeda.com/) and printed through [JLCPCB](https://jlcpcb.com/). The design contains the main hat board, modular port, and the front panel board.
+## Files
+The project contains a set of files for easy use. 
+- **setup.sh:**
+This script is installs all the drivers in the right order and installs special software for daemons and services.
 
-![robot](/images/PCB_3D.png)
+- **code folder:**
+Code folder contains code for testing all the hardware features. It also contains example code for deveopment.
+
+- **misc folder:**
+Contains files required for installation. Modifing these files can cause errors upon installation. 
 
 ## Circuit
+The design was made from scratch. Cubebot only needs 3 servos, but 10 are available for flexibility in other designs. The hat board contains all the main sesnors and ports with the exception of the microphone, and barometer. The barometer and mic are placed the the front panel board for noise reduction and easy replaceability.
 ![robot](/images/PCB_Wiring.png)
 
+## PCB
+The PCB was designed using [EasyEDA](https://easyeda.com/) and printed through [JLCPCB](https://jlcpcb.com/). The design contains the main hat board, modular port, and the front panel board.
+![robot](/images/PCB_3D.png)
+ 
 ## Coming Soon
 - 3D print files and parts list
 - PCB files
