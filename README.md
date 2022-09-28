@@ -12,7 +12,7 @@ Raspberry Pi 3
 Raspberry Pi 4
 Raspberry Pi Zero
 
-![robot](/images/photo2.jpg)
+![robot](/images/BooBot.png)
 
 ## Features
 - **Camera:** 5MP, 1080p at 30fps. Used for remote control, automation, security, webcam, etc. 
@@ -64,3 +64,6 @@ The PCB was designed using [EasyEDA](https://easyeda.com/) and printed through [
 ## Coming Soon
 - 3D print files and parts list
 - PCB files
+
+## Final Results
+![robot](/images/photo2.jpg)
