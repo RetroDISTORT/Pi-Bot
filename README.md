@@ -63,7 +63,6 @@ The PCB was designed using [EasyEDA](https://easyeda.com/) and printed through [
  
 ## Coming Soon
 - 3D print files and parts list
-- PCB files
 
 ## Final Results
 ![robot](/images/photo2.jpg)
