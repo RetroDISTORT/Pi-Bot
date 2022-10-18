@@ -1,0 +1,113 @@
+import os               # Required for running command line functions
+import glob             # Required for showing applicaitons
+import time             # Required for delays
+import board            # Required for I2C bus
+import busio            # Required for I2C bus
+import random
+import digitalio        # Required for I2C bus
+import adafruit_ssd1306 # Required for OLED displays
+
+import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
+
+from PIL import Image, ImageDraw, ImageFont
+
+def get_fonts(fontName):
+    fontXL = ImageFont.truetype(fontName, 18)
+    fontL  = ImageFont.truetype(fontName, 16)
+    fontM  = ImageFont.truetype(fontName, 12)
+    fontS  = ImageFont.truetype(fontName, 10)
+    fontXS = ImageFont.truetype(fontName,  8)
+    
+    return [fontXL, fontL, fontM, fontS, fontXS]
+
+def get_apps(dir):
+    # list to store files
+    appList = []
+    # Iterate directory
+    for file in os.listdir(dir):
+        # check only text files
+        if file.endswith('.py'):
+            appList.append(file[:-3])
+
+    return appList
+
+def get_input():
+    if GPIO.input(8) == 0:  # UP
+        time.sleep(.1)
+        return "UP"
+            
+    if GPIO.input(25) == 0: # MID
+        time.sleep(.1)
+        return "SELECT"
+            
+    if GPIO.input(7) == 0:  # DOWN
+        time.sleep(.1)
+        return "DOWN"
+    
+    return "NONE"
+                
+
+def menu(directory, device, fonts, menu):
+    done = False
+    draw_menu(device, fonts, menu)
+    
+    while(not done):
+        
+        input = ""
+        while(input==""):
+            input = get_input()
+
+        if (input == "UP"):
+            menu.insert(0, menu.pop())
+            draw_menu(device, fonts, menu)
+
+        if (input == "SELECT"):
+            exec(open(directory + menu[0] + ".py").read(), globals()) #Run application
+            draw_menu(device, fonts, menu)
+
+        if (input == "DOWN"):
+            menu.append(menu.pop(0))
+            draw_menu(device, fonts, menu)
+
+def draw_menu(device, fonts, menu):
+    image = Image.new('1', (device.width, device.height))
+    draw = ImageDraw.Draw(image)
+    done = False
+    hshift = [15,5,0,5] #[0,5,15,5,0]
+    vshift = [21,37,51,1,10]#[1,10,21,37,51]
+    useFont  = [1,2,4,2]#[4,2,1,2,4]
+        
+    draw.rectangle((0, 25, device.width, 39), outline=0, fill=255)
+    for i in range(-2,3):
+        if len(menu) > abs(i):
+            draw.text((hshift[i] , vshift[i]), menu[i], font=fonts[useFont[i]],fill = 0 if i == 0 else 255)
+                
+    device.image(image)
+    device.show()
+        
+
+def main(directory):
+    WIDTH  = 128  # DISPLAY
+    HEIGHT = 64   # DISPLAY
+    BORDER = 5    # DISPLAY
+    
+    i2c = busio.I2C(board.SCL, board.SDA)
+    oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
+    pidList = []
+    fontList = get_fonts('ratchet-clank-psp.ttf')
+    optionList = get_apps(directory)
+    
+    
+    oled.contrast(1) # Max contrast is 255
+
+    GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # DOWN       Order:
+    GPIO.setup(8, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # UP      [U][C][D][O]
+    GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_UP) # CENTER
+
+    menu(directory, oled, fontList, optionList)
+    
+    #exec(open('/home/retro/Documents/github/boobot/code/OLED_TEST_AI.py').read()) #Run OLED script
+    #os.system("pactl set-sink-volume 0 50%")
+    
+if __name__ == "__main__":
+    main(r'/home/retro/Documents/github/boobot/code/')

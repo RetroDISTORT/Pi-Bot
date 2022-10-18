@@ -1,0 +1,6 @@
+--2022-08-21 12:45:34--  https://srv3.onlymp3.to/download?file=80a07a8c3ad3485d590ae966472023df251003003
+Resolving srv3.onlymp3.to (srv3.onlymp3.to)... 111.90.158.113
+Connecting to srv3.onlymp3.to (srv3.onlymp3.to)|111.90.158.113|:443... connected.
+HTTP request sent, awaiting response... 403 Forbidden
+2022-08-21 12:45:42 ERROR 403: Forbidden.
+

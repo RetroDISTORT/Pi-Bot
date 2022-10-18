@@ -1,8 +1,13 @@
 #!/bin/bash
 echo "Starting setup..."
 echo " "
-echo "Creating files directory"
-mkdir ./files
+
+if (( $EUID != 0)); then
+    echo "Please run this script as root."
+    exit
+fi
+echo "Moving files to root directory"
+cp -r ../boobot  /opt
 read -p "apt-get update & upgrade? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -25,24 +30,40 @@ then
     echo "Emacs installation done "
 fi
 echo " "
+read -p "Install Retropie? Y/n... " -n 1 -r
+if [[ ! $REPLY =~ ^[Nn]$ ]]
+then
+    echo " "
+    echo "Installing retropie..."
+    mkdir ~/retropie
+    git clone --depth=1 https://github.com/RetroPie/RetroPie-Setup.git ~/RetroPie
+    chmod +x ~/RetroPie/retropie_setup.sh
+    sudo ~/RetroPie/retropie_setup.sh
+    #rm -rf retropie/
+    echo " "
+    echo "Retropie installation done "
+fi
+echo " "
 read -p "Install MAX98357 I2S Speaker AMP? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
     sudo echo "" > '/etc/modprobe.d/raspi-blacklist.conf'
-    sudo cp ./code/misc/modules /etc/
+    sudo cp ./src/modules /etc/
     sudo apt-get install alsa-utils
-    sudo cp ./code/misc/asound.conf /etc/asound.conf
-    sed -i 's/dtparam=audio=on/#dtparam=audio=on/' /boot/config.txt
-    if grep -q "dtoverlay=hifiberry-dac" "$/boot/config.txt"; then
+    #sudo cp ./srcasound.conf /etc/asound.conf
+    sed -i 's/^dtparam=audio=on/#dtparam=audio=on/' /boot/config.txt
+    if grep -q "dtoverlay=hifiberry-dac" "/boot/config.txt"; then
 	echo "I2S overlays were edited before, re-running script?" # SomeString was found
     else
-	sudo echo "" >> $/boot/config.txt
-	sudo echo "dtoverlay=hifiberry-dac" >> $/boot/config.txt
-	sudo echo "dtoverlay=i2s-mmap" >> $/boot/config.txt
+	sudo echo "" >> /boot/config.txt
+	sudo echo "dtoverlay=hifiberry-dac" >> /boot/config.txt
+	sudo echo "dtoverlay=i2s-mmap" >> /boot/config.txt
 	echo "I2S overlays added!"
     fi
+    sudo python3 -m pip install --force-reinstall adafruit-blinka # Required for board and digitalio
+    sudo pip install pyalsaaudio
     echo "MAX98357 driver installation done!"
     echo "Instalation guide from:"
     echo "https://bytesnbits.co.uk/raspberry-pi-i2s-sound-output/"
@@ -53,11 +74,11 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
-    mkdir ./mic
+    mkdir ./src/mic
     sudo pip3 install --upgrade adafruit-python-shell
-    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py ./mic
-    sudo python3 ./mic/i2smic.py
-    rm -r ./mic
+    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py ./src/mic
+    sudo python3 ./src/mic/i2smic.py
+    rm -r ./src/mic
     echo "SPH0645 driver installation done!"
 fi
 echo " "
@@ -66,10 +87,7 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing ...\n"
-    echo " "
-    mkdir ./files/OLED
     echo "Installing Adafruit_GPIO ...\n"
-    echo " "
     sudo apt-get install python3-pip
     sudo pip3 install adafruit-circuitpython-ssd1306
     sudo apt-get install python3-pil
@@ -87,9 +105,6 @@ then
     sudo pip3 install adafruit-circuitpython-Pixel-Framebuf
     sudo pip3 install adafruit-circuitpython-Pixelbuf
     sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
-    sudo cp ./code/snd-blacklist.conf /etc/modprobe.d/snd-blacklist.conf
-    echo " "
-    echo "Note snd_bcm2835 has been blacklisted! Tip from: https://github.com/jgarff/rpi_ws281x"
     echo " "
     echo "Neopixels driver installation done!"
 fi
@@ -137,13 +152,13 @@ then
     echo " "
     echo "Installing necessary drivers..."
     sudo apt-get -y install hostapd dnsmasq
-    sudo mv ./code/misc/dhcpcd.conf /etc/dhcpcd.conf
-    sudo mv ./code/misc/interfaces /etc/network/interfaces
-    sudo mv ./code/misc/hostapd.conf /etc/hostapd/hostapd.conf
-    sudo mv ./code/misc/hostapd /etc/default/hostapd
-    sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
-    sudo mv ./code/misc/dnsmasq.conf /etc/dnsmasq.conf
-    sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
+    sudo mv ./src/dhcpcd.conf  /etc/dhcpcd.conf
+    sudo mv ./src/interfaces   /etc/network/interfaces
+    sudo mv ./src/hostapd.conf /etc/hostapd/hostapd.conf
+    sudo mv ./src/hostapd      /etc/default/hostapd
+    sudo mv /etc/dnsmasq.conf  /etc/dnsmasq.conf.bak
+    sudo mv ./src/dnsmasq.conf /etc/dnsmasq.conf
+    sudo mv /etc/dnsmasq.conf  /etc/dnsmasq.conf.bak
     echo "Hotspot installation done! (Reboot required to enable)"
 fi
 echo " "
@@ -152,19 +167,19 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Setting up Script..."
-    sudo cp ./code/rc.local /etc/rc.local
+    sudo cp ./src/rc.local /etc/rc.local
     sudo chmod +x /etc/rc.local
     echo "Script Ready! "
 fi
 echo " "
-echo " "
-read -p "Install additional drivers? Y/n... " -n 1 -r
+
+read -p "Install python modules for apps? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
-    echo "Installing keyboard..."
-    sudo pip3 install keyboard
-    echo "INA219 driver installation done!"
+    echo "Installing modules"
+    sudo pip3 install pyalsaaudio
+    echo "Modules Ready! "
 fi
 echo " "
 echo "DONE!"

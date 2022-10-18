@@ -6,4 +6,4 @@ from adafruit_servokit import ServoKit
 kit = ServoKit(channels=16, address = 0x41))
 
 # Wheels are on 0 and 3. Camera is on 9 
-kit.servo[9].angle = 100 # Motors stop at 100
+kit.servo[0].angle = 100 # Motors stop at 100

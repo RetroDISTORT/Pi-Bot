@@ -14,11 +14,9 @@ led.value = True
 pixel_pin  = board.D12
 num_pixels = 16
 pixels = neopixel.NeoPixel(pixel_pin, num_pixels)
-ORDER = neopixel.RGB
+ORDER = neopixel.GRB
 
-pixels = neopixel.NeoPixel(
-    pixel_pin, num_pixels, brightness=0.1, auto_write=False, pixel_order=ORDER
-)
+pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.05, auto_write=False, pixel_order=ORDER)
 
 
 def wheel(pos):
@@ -54,24 +52,24 @@ def rainbow_cycle(wait):
 
 while True:
     # Comment this line out if you have RGBW/GRBW NeoPixels
-    #pixels.fill((255, 0, 0))
+    #pixels.fill((255, 15, 15))
     # Uncomment this line if you have RGBW/GRBW NeoPixels
     # pixels.fill((255, 0, 0, 0))
-    #pixels.show()
+#    pixels.show()
     #time.sleep(1)
 
     # Comment this line out if you have RGBW/GRBW NeoPixels
     #pixels.fill((0, 255, 0))
     # Uncomment this line if you have RGBW/GRBW NeoPixels
     # pixels.fill((0, 255, 0, 0))
-    #pixels.show()
+#    pixels.show()
     #time.sleep(1)
 
     # Comment this line out if you have RGBW/GRBW NeoPixels
-    #pixels.fill((0, 0, 255))
+    pixels.fill((0, 0, 0))
     # Uncomment this line if you have RGBW/GRBW NeoPixels
     # pixels.fill((0, 0, 255, 0))
-    #pixels.show()
+    pixels.show()
     #time.sleep(1)
 
-    rainbow_cycle(0.01)  # rainbow cycle with 1ms delay per step
+#    rainbow_cycle(0.01)  # rainbow cycle with 1ms delay per step

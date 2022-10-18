@@ -18,6 +18,6 @@ if [ "$_IP" ]; then
 fi
 
 # boobot startup                                                                                                            
-sudo python3 /home/retro/Documents/github/boobot/code/startup.py &
+sudo python3 /opt/apps/startup.py &
 
 exit 0
