@@ -20,19 +20,19 @@ def get_fonts(fontName):
     
     return [fontXL, fontL, fontM, fontS, fontXS]
 
-def get_apps(dir):
+def get_list(dir):
     # list to store files
-    appList = []
+    validExtensions = ('.pls', '.m3u')
+    optionList      = []
+    
     # Iterate directory
     for file in os.listdir(dir):
-        appFolder = os.path.join(dir, file)
+        folder = os.path.join(dir, file)
         # check only text files
-        if os.path.isdir(appFolder): #.endswith('.py'):
-            nameIndex = appFolder.rindex('/')+1
-            appList.append(appFolder[nameIndex:])
+        if file.endswith(validExtensions):
+            optionList.append(file)
 
-    print(appList)
-    return appList
+    return optionList
 
 def get_input():
     if GPIO.input(8) == 0:  # UP
@@ -99,14 +99,13 @@ def draw_menu(device, fonts, menu):
     image = Image.new('1', (device.width, device.height))
     draw = ImageDraw.Draw(image)
     done = False
-    hshift = [15,5,0,5] #[0,5,15,5,0]
     vshift = [21,37,51,1,10]#[1,10,21,37,51]
     useFont  = [1,2,4,2]#[4,2,1,2,4]
         
     draw.rectangle((0, 25, device.width, 39), outline=0, fill=255)
     for i in range(-2,3):
         if len(menu) > abs(i):
-            draw.text((hshift[i] , vshift[i]), menu[i], font=fonts[useFont[i]],fill = 0 if i == 0 else 255)
+            draw.text((2 , vshift[i]), menu[i], font=fonts[useFont[i]],fill = 0 if i == 0 else 255)
                 
     device.image(image)
     device.show()
@@ -116,11 +115,11 @@ def main(directory):
     WIDTH  = 128  # DISPLAY
     HEIGHT = 64   # DISPLAY
     BORDER = 5    # DISPLAY
-    
+
     i2c = busio.I2C(board.SCL, board.SDA)
     oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
     fontList = get_fonts('/opt/boobot/fonts/ratchet-clank-psp.ttf')
-    optionList = get_apps(directory)
+    optionList = get_list(directory+'Stations/')
     
     oled.contrast(1) # Max contrast is 255
 
@@ -134,4 +133,4 @@ def main(directory):
     #os.system("pactl set-sink-volume 0 50%")
     
 if __name__ == "__main__":
-    main('/opt/boobot/apps/')
+    main('/opt/boobot/apps/Radio/')

@@ -59,7 +59,10 @@ def set_volume(display, sound, fonts):
             time.sleep(.1)
             volume = sound.getvolume()
             if (volume[0]<MAX_VOL):
-                sound.setvolume(volume[0]+CHANGE)
+                if(volume[0] + CHANGE > MAX_VOL):
+                    sound.setvolume(MAX_VOL)
+                else:
+                    sound.setvolume(volume[0]+CHANGE)
                 display_volume(display, sound, fonts)
             
         if GPIO.input(25) == 0: # MID
@@ -72,7 +75,10 @@ def set_volume(display, sound, fonts):
             time.sleep(.1)
             volume = sound.getvolume()
             if(volume[0]>MIN_VOL):
-                sound.setvolume(volume[0]-CHANGE)
+                if(volume[0] - CHANGE < MIN_VOL):
+                    sound.setvolume(MIN_VOL)
+                else:
+                    sound.setvolume(volume[0]-CHANGE)
                 display_volume(display, sound, fonts)
 
 def main(directory):
@@ -84,7 +90,7 @@ def main(directory):
     oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
     snd = alsaaudio.Mixer()
 
-    fontList = get_fonts(r'/opt/boobot/fonts/ratchet-clank-psp.ttf')
+    fontList = get_fonts('/opt/boobot/fonts/ratchet-clank-psp.ttf')
     
     oled.contrast(1) # Max contrast is 255
     
@@ -97,4 +103,4 @@ def main(directory):
     
 
 if __name__ == "__main__":
-    main(r'/opt/boobot/code/')
+    main('/opt/boobot/')

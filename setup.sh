@@ -165,11 +165,27 @@ echo " "
 read -p "Create Startup Script? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
+    current_user=$(who | head -n1 | awk '{print $1;}')
     echo " "
-    echo "Setting up Script..."
+    echo "Setting up script for user $current_user..."
     sudo cp ./src/rc.local /etc/rc.local
     sudo chmod +x /etc/rc.local
     echo "Script Ready! "
+fi
+echo " "
+
+read -p "Setup PulseAudio as a System Wide Service? Y/n... " -n 1 -r
+if [[ ! $REPLY =~ ^[Nn]$ ]]
+then
+    current_user=$(who | head -n1 | awk '{print $1;}')
+    echo " "
+    echo "Setting up..."
+    sudo cp ./src/pulseaudio.service /etc/systemd/system/pulseaudio.service
+    systemctl --system enable pulseaudio.service
+    systemctl --system start pulseaudio.service
+    sudo cp ./src/client.conf /etc/pulse/client.conf
+    sudo sed -i '/^pulse-access:/ s/$/root,'"$current_user"'/' /etc/group
+    echo "PulseAudio is Ready!"
 fi
 echo " "
 
