@@ -27,7 +27,7 @@ def getAverageVoltage(sensor, samples, delay):
 
     voltageAVG = f'{totalVoltage/samples:.3f}'
     shuntAVG   = f'{totalShunt/samples:.6f}'
-    currentAVG = f'{totalShunt/samples/.0005:.3f}' #f'{totalCurrent/samples:.3f}'
+    currentAVG = f'{totalShunt/samples/.0064:.3f}'  #f'{totalCurrent/samples:.3f}'
     
     print(f'| {voltageAVG}V | {shuntAVG}V | {currentAVG}A | {current_time} |')
     os.system("echo '|" + voltageAVG + " | " + shuntAVG + " | " + currentAVG + " | " + current_time + "|' >> status.txt" )
@@ -49,7 +49,7 @@ def glow(device, delay, red, green, blue):
 
 def main():
     # enable Neopixels
-    SAMPLES = 300
+    SAMPLES = 10
     DELAY   = .2
     VMAX    = 8.42
     VMIN    = 7.40 #6.55 

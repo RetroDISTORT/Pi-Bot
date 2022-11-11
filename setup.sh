@@ -2,10 +2,13 @@
 echo "Starting setup..."
 echo " "
 
+# Check if code is being ran as root
 if (( $EUID != 0)); then
     echo "Please run this script as root."
     exit
 fi
+
+# Move all the files to the rood directory
 echo "Moving files to root directory"
 cp -r ../boobot  /opt
 read -p "apt-get update & upgrade? Y/n... " -n 1 -r
@@ -20,6 +23,8 @@ then
     echo "Update and Upgrade done "
 fi
 echo " "
+
+# Install emacs
 read -p "Install Emacs? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -30,6 +35,8 @@ then
     echo "Emacs installation done "
 fi
 echo " "
+
+# Install retropie
 read -p "Install Retropie? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -44,6 +51,8 @@ then
     echo "Retropie installation done "
 fi
 echo " "
+
+# Speaker setup
 read -p "Install MAX98357 I2S Speaker AMP? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -69,19 +78,23 @@ then
     echo "https://bytesnbits.co.uk/raspberry-pi-i2s-sound-output/"
 fi
 echo " "
+
+# Microphone setup
 read -p "Install SPH0645 I2S MIC? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
     mkdir ./src/mic
-    sudo pip3 install --upgrade adafruit-python-shell
-    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py ./src/mic
+    #sudo pip3 install --upgrade adafruit-python-shell
+    wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py -P ./src/mic/
     sudo python3 ./src/mic/i2smic.py
-    rm -r ./src/mic
+    rm -rf ./src/mic
     echo "SPH0645 driver installation done!"
 fi
 echo " "
+
+# Oled setup
 read -p "Install OLED Drivers? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -96,6 +109,8 @@ then
     echo "OLED driver installation done!"
 fi
 echo " "
+
+# Neopixels setup
 read -p "Install NeoPixel Drivers? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -109,6 +124,8 @@ then
     echo "Neopixels driver installation done!"
 fi
 echo " "
+
+# LiPo sensor setup
 read -p "Install INA219 Battery Sensor Drivers? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -118,6 +135,8 @@ then
     echo "INA219 driver installation done!"
 fi
 echo " "
+
+# Servo controller setup
 read -p "Install PCA9685 Servo Controller? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -128,6 +147,8 @@ then
     echo "PCA9685 driver installation done!"
 fi
 echo " "
+
+# Accelerometer setup
 read -p "Install MPU9250 Accel/Gyro/Mag?(NOT WORKING) Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -137,6 +158,8 @@ then
     echo "MPU9250 driver installation done!"
 fi
 echo " "
+
+# Pressure and temp sensor setup
 read -p "Install BMP280 Pres/Temp Sensor? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -146,6 +169,8 @@ then
     echo "BME280 driver installation done!"
 fi
 echo " "
+
+# Hotspot setup
 read -p "Install Hotspot? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -162,6 +187,8 @@ then
     echo "Hotspot installation done! (Reboot required to enable)"
 fi
 echo " "
+
+# Startup script setup
 read -p "Create Startup Script? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -170,25 +197,27 @@ then
     echo "Setting up script for user $current_user..."
     sudo cp ./src/rc.local /etc/rc.local
     sudo chmod +x /etc/rc.local
+    cp ./src/.profile ~/.profile
     echo "Script Ready! "
 fi
 echo " "
 
-read -p "Setup PulseAudio as a System Wide Service? Y/n... " -n 1 -r
-if [[ ! $REPLY =~ ^[Nn]$ ]]
-then
-    current_user=$(who | head -n1 | awk '{print $1;}')
-    echo " "
-    echo "Setting up..."
-    sudo cp ./src/pulseaudio.service /etc/systemd/system/pulseaudio.service
-    systemctl --system enable pulseaudio.service
-    systemctl --system start pulseaudio.service
-    sudo cp ./src/client.conf /etc/pulse/client.conf
-    sudo sed -i '/^pulse-access:/ s/$/root,'"$current_user"'/' /etc/group
-    echo "PulseAudio is Ready!"
-fi
-echo " "
+# read -p "Setup PulseAudio as a System Wide Service? Y/n... " -n 1 -r
+# if [[ ! $REPLY =~ ^[Nn]$ ]]
+# then
+#     current_user=$(who | head -n1 | awk '{print $1;}')
+#     echo " "
+#     echo "Setting up..."
+#     sudo cp ./src/pulseaudio.service /etc/systemd/system/pulseaudio.service
+#     systemctl --system enable pulseaudio.service
+#     systemctl --system start pulseaudio.service
+#     sudo cp ./src/client.conf /etc/pulse/client.conf
+#     sudo sed -i '/^pulse-access:/ s/$/root,'"$current_user"'/' /etc/group
+#     echo "PulseAudio is Ready!"
+# fi
+# echo " "
 
+# Python module setup
 read -p "Install python modules for apps? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then

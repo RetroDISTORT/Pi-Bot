@@ -58,12 +58,11 @@ def set_volume(display, sound, fonts):
         if GPIO.input(8) == 0:  # UP
             time.sleep(.1)
             volume = sound.getvolume()
-            if (volume[0]<MAX_VOL):
-                if(volume[0] + CHANGE > MAX_VOL):
-                    sound.setvolume(MAX_VOL)
-                else:
-                    sound.setvolume(volume[0]+CHANGE)
-                display_volume(display, sound, fonts)
+            if(volume[0] + CHANGE > MAX_VOL):
+                sound.setvolume(MAX_VOL)
+            else:
+                sound.setvolume(volume[0]+CHANGE)
+            display_volume(display, sound, fonts)
             
         if GPIO.input(25) == 0: # MID
             time.sleep(.1)
@@ -74,12 +73,11 @@ def set_volume(display, sound, fonts):
         if GPIO.input(7) == 0:  # DOWN
             time.sleep(.1)
             volume = sound.getvolume()
-            if(volume[0]>MIN_VOL):
-                if(volume[0] - CHANGE < MIN_VOL):
-                    sound.setvolume(MIN_VOL)
-                else:
-                    sound.setvolume(volume[0]-CHANGE)
-                display_volume(display, sound, fonts)
+            if(volume[0] - CHANGE < MIN_VOL):
+                sound.setvolume(MIN_VOL)
+            else:
+                sound.setvolume(volume[0]-CHANGE)
+            display_volume(display, sound, fonts)
 
 def main(directory):
     WIDTH  = 128  # DISPLAY

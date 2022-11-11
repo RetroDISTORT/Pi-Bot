@@ -20,19 +20,19 @@ def get_fonts(fontName):
     
     return [fontXL, fontL, fontM, fontS, fontXS]
 
-def get_apps(dir):
+def get_list(dir):
     # list to store files
-    appList = []
+    validExtensions = ('.pls', '.m3u')
+    optionList      = []
+    
     # Iterate directory
     for file in os.listdir(dir):
-        appFolder = os.path.join(dir, file)
+        folder = os.path.join(dir, file)
         # check only text files
-        if os.path.isdir(appFolder): #.endswith('.py'):
-            nameIndex = appFolder.rindex('/')+1
-            appList.append(appFolder[nameIndex:])
+        if file.endswith(validExtensions):
+            optionList.append(file)
 
-    print(appList)
-    return appList
+    return optionList
 
 def get_input():
     if GPIO.input(8) == 0:  # UP
@@ -52,19 +52,26 @@ def get_input():
 def start_app(device, fonts, appDirectory):
     try:
         exec(open(appDirectory).read(), globals()) #Run application
-    except:
-        printMessage(device, fonts[1], "App crashed")
+    except Exception as e:
+        device.contrast(1) # Max contrast is 255
+        printMessage(device, fonts[1], str(e))
         
     time.sleep(1)
 
 def printMessage(device, inputFont, message):
     image = Image.new('1', (device.width, device.height))
-    draw = ImageDraw.Draw(image)
-    
-    draw.rectangle((2, 2, device.width-2, device.height - 2), outline=0, fill=255)
-    draw.text((4 , 32), message, font = inputFont, fill = 0)
-    device.image(image)
-    device.show()
+    draw  = ImageDraw.Draw(image)
+    speed = 10 # Larger is faster
+
+    (font_width, font_height) = inputFont.getsize(message)
+    time.sleep(.5)
+
+    # Scroll error message
+    for pos_x in range(0,-font_width,-speed):
+        draw.rectangle((0, 10, device.width, device.height - 10), outline=0, fill=255)
+        draw.text((pos_x , 25), message, font = inputFont, fill = 0)
+        device.image(image)
+        device.show()
 
 def menu(directory, device, fonts, menu):
     done = False
@@ -81,7 +88,7 @@ def menu(directory, device, fonts, menu):
             draw_menu(device, fonts, menu)
 
         if (input == "SELECT"):
-            start_app(device, fonts, directory + menu[0] + "/" + menu[0] + ".py")
+            run(device, fonts, directory + menu[0] + "/" + menu[0] + ".py")
             draw_menu(device, fonts, menu)
 
         if (input == "DOWN"):
@@ -92,14 +99,13 @@ def draw_menu(device, fonts, menu):
     image = Image.new('1', (device.width, device.height))
     draw = ImageDraw.Draw(image)
     done = False
-    hshift = [15,5,0,5] #[0,5,15,5,0]
     vshift = [21,37,51,1,10]#[1,10,21,37,51]
     useFont  = [1,2,4,2]#[4,2,1,2,4]
         
     draw.rectangle((0, 25, device.width, 39), outline=0, fill=255)
     for i in range(-2,3):
         if len(menu) > abs(i):
-            draw.text((hshift[i] , vshift[i]), menu[i], font=fonts[useFont[i]],fill = 0 if i == 0 else 255)
+            draw.text((2 , vshift[i]), menu[i], font=fonts[useFont[i]],fill = 0 if i == 0 else 255)
                 
     device.image(image)
     device.show()
@@ -109,11 +115,11 @@ def main(directory):
     WIDTH  = 128  # DISPLAY
     HEIGHT = 64   # DISPLAY
     BORDER = 5    # DISPLAY
-    
+
     i2c = busio.I2C(board.SCL, board.SDA)
     oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
-    fontList = get_fonts('/home/retro/Documents/github/boobot/fonts/ratchet-clank-psp.ttf')
-    optionList = get_apps(directory)
+    fontList = get_fonts('/opt/boobot/fonts/ratchet-clank-psp.ttf')
+    optionList = get_list(directory+'Stations/')
     
     oled.contrast(1) # Max contrast is 255
 
@@ -127,4 +133,4 @@ def main(directory):
     #os.system("pactl set-sink-volume 0 50%")
     
 if __name__ == "__main__":
-    main('/home/retro/Documents/github/boobot/apps/')
+    main('/opt/boobot/apps/Radio/')

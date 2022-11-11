@@ -10,7 +10,7 @@ def kill_neopixels():
     led = digitalio.DigitalInOut(board.D15)
     led.direction = digitalio.Direction.OUTPUT
     led.value = True
-    
+
     pixel_pin  = board.D12
     num_pixels = 16
     pixels = neopixel.NeoPixel(pixel_pin, num_pixels)
@@ -19,7 +19,7 @@ def kill_neopixels():
     pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.05, auto_write=True, pixel_order=ORDER)
     
     pixels.fill((0, 0, 0))
-
+    
 def kill_display():
     i2c = busio.I2C(board.SCL, board.SDA)
     oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
@@ -28,8 +28,12 @@ def kill_display():
     
 def main():
     #kill_neopixels() # Pixels should auto-shutdownn once the power mosfet is killed automatically
-    kill_display()
-    os.system("sudo shutdown now")
+    #kill_display()
+    command1 = "/opt/vc/bin/raspivid -t 0 -hf -vf -w 640 -h 480 --nopreview -o - | nc -l 5000" # Fastest
+    command2 = "/opt/vc/bin/raspivid -t 0 -w 1280 -h 720 -hf -ih -fps 20 -o - | nc - k -l 5000"
+    command1 = "/opt/vc/bin/raspivid -t 0 -hf -vf -w 640 -h 480 --nopreview -o - | cvlv  -vvv stream:///dev/stdin --sout '#standard{access=http,mux=ts,dst=:8160}' :demux=h264" # TEST
+    
+    os.system(command1)
     
 if __name__ == "__main__":
     main()
