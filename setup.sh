@@ -8,7 +8,7 @@ if (( $EUID != 0)); then
     exit
 fi
 
-# Move all the files to the rood directory
+# Move all the files to the root directory
 echo "Moving files to root directory"
 cp -r ../boobot  /opt
 read -p "apt-get update & upgrade? Y/n... " -n 1 -r
@@ -36,6 +36,23 @@ then
 fi
 echo " "
 
+# Install uv4l
+read -p "Install uv4l? (Causes issues with volume control) Y/n... " -n 1 -r
+if [[ ! $REPLY =~ ^[Nn]$ ]]
+then
+    echo " "
+    echo "Installing uv4l..."
+    curl https://www.linux-projects.org/listing/uv4l_repo/lpkey.asc | sudo apt-key add -
+    echo "deb https://www.linux-projects.org/listing/uv4l_repo/raspbian/stretch stretch main" | sudo tee /etc/apt/sources.list.d/uv4l.list
+    sudo apt-get update
+    sudo apt-get install uv4l uv4l-raspicam uv4l-webrtc
+    echo " "
+    echo "It's recommended to reserve 256MB or more for GPU memory. This can be done in raspi-config"
+    echo "Installation guide from: https://www.linux-projects.org/uv4l/installation/"
+    echo "uv4l installation done "
+fi
+echo " "
+
 # Install retropie
 read -p "Install Retropie? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
@@ -58,10 +75,10 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing necessary drivers..."
-    sudo echo "" > '/etc/modprobe.d/raspi-blacklist.conf'
+    sudo echo "" > '/etc/modprobe.d/raspi-blacklist.conf' 
     sudo cp ./src/modules /etc/
-    sudo apt-get install alsa-utils
-    #sudo cp ./srcasound.conf /etc/asound.conf
+    sudo apt-get install alsa-utils #ensure installation & update alsa-utils
+    sudo cp ./srcasound.conf /etc/asound.conf
     sed -i 's/^dtparam=audio=on/#dtparam=audio=on/' /boot/config.txt
     if grep -q "dtoverlay=hifiberry-dac" "/boot/config.txt"; then
 	echo "I2S overlays were edited before, re-running script?" # SomeString was found
@@ -72,7 +89,7 @@ then
 	echo "I2S overlays added!"
     fi
     sudo python3 -m pip install --force-reinstall adafruit-blinka # Required for board and digitalio
-    sudo pip install pyalsaaudio
+    sudo pip install pyalsaaudio # This enables volume control through python
     echo "MAX98357 driver installation done!"
     echo "Instalation guide from:"
     echo "https://bytesnbits.co.uk/raspberry-pi-i2s-sound-output/"
@@ -224,7 +241,24 @@ then
     echo " "
     echo "Installing modules"
     sudo pip3 install pyalsaaudio
+    sudo apt install python3-pyaudio
     echo "Modules Ready! "
 fi
 echo " "
 echo "DONE!"
+
+###########################
+## INSTALLATION TEMPLATE ##
+###########################
+
+# Install 
+# read -p "Install ? Y/n... " -n 1 -r
+# if [[ ! $REPLY =~ ^[Nn]$ ]]
+# then
+#     echo " "
+#     echo "Installing ..."
+    
+#     echo " "
+#     echo " installation done "
+# fi
+# echo " "
