@@ -241,7 +241,8 @@ then
     echo " "
     echo "Installing modules"
     sudo pip3 install pyalsaaudio
-    sudo apt install python3-pyaudio
+    sudo apt install python3-pyaudio  
+    sudo apt install libpulse-dev     #C++ pulse lib
     echo "Modules Ready! "
 fi
 echo " "
