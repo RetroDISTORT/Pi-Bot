@@ -33,7 +33,7 @@ def get_input():
 
 def graph_array(draw, array):
     maxGraph = max(array)
-    minGraph = min(array) if (min(array)!=max(array)) else min(array)+1
+    minGraph = min(array) if (min(array)!=max(array)) else min(array)-1
     
     for i in range(len(array)-1):
         value1 = 52 - (map_value(array[i]  , minGraph, maxGraph)/2)
