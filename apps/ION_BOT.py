@@ -36,17 +36,15 @@ def get_apps(dir):
 
 def get_input():
     if GPIO.input(8) == 0:  # UP
-        time.sleep(.1)
         return "UP"
             
     if GPIO.input(25) == 0: # MID
-        time.sleep(.1)
         return "SELECT"
             
     if GPIO.input(7) == 0:  # DOWN
-        time.sleep(.1)
         return "DOWN"
-    
+
+    time.sleep(.05)
     return "NONE"
                 
 def start_app(device, fonts, appDirectory):

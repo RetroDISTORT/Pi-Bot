@@ -36,6 +36,18 @@ then
 fi
 echo " "
 
+# Install bluetooth 
+ read -p "Install bluetooth packages? Y/n... " -n 1 -r
+ if [[ ! $REPLY =~ ^[Nn]$ ]]
+ then
+     echo " "
+     echo "Installing bluez..."
+     sudo apt install python3-dbus
+     echo " "
+     echo " installation done "
+ fi
+ echo " "
+
 # Install uv4l
 read -p "Install uv4l? (Causes issues with volume control) Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
@@ -59,7 +71,7 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing retropie..."
-    mkdir ~/retropie
+    mkdir ~/RetroPie
     git clone --depth=1 https://github.com/RetroPie/RetroPie-Setup.git ~/RetroPie
     chmod +x ~/RetroPie/retropie_setup.sh
     sudo ~/RetroPie/retropie_setup.sh
@@ -89,7 +101,6 @@ then
 	echo "I2S overlays added!"
     fi
     sudo python3 -m pip install --force-reinstall adafruit-blinka # Required for board and digitalio
-    sudo pip install pyalsaaudio # This enables volume control through python
     echo "MAX98357 driver installation done!"
     echo "Instalation guide from:"
     echo "https://bytesnbits.co.uk/raspberry-pi-i2s-sound-output/"
@@ -107,6 +118,7 @@ then
     wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2smic.py -P ./src/mic/
     sudo python3 ./src/mic/i2smic.py
     rm -rf ./src/mic
+    cp ./src/.asoundrc ~/ #Mic volume control
     echo "SPH0645 driver installation done!"
 fi
 echo " "
@@ -212,8 +224,8 @@ then
     current_user=$(who | head -n1 | awk '{print $1;}')
     echo " "
     echo "Setting up script for user $current_user..."
-    sudo cp ./src/rc.local /etc/rc.local
-    sudo chmod +x /etc/rc.local
+    #sudo cp ./src/rc.local /etc/rc.local
+    #sudo chmod +x /etc/rc.local
     cp ./src/.profile ~/.profile
     echo "Script Ready! "
 fi
@@ -235,14 +247,27 @@ echo " "
 # echo " "
 
 # Python module setup
+echo "The following modules may be required for proper installation and app functionallity."
+echo "  [1] adafruit-python-shell       Required for I2S-mic"
+echo "  [2] libasound2-dev              Required for pyalsaudio installation"
+echo "  [3] pyalsaaudio                 Enables volume control through python"
+echo "  [4] python3-pyaudio             "
+echo "  [5] libpulse-dev  [skip]        C++ pulse lib NOT REQUIRED ANYMORE"
+echo ""
 read -p "Install python modules for apps? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
     echo " "
     echo "Installing modules"
-    sudo pip3 install pyalsaaudio
+    sudo pip3 install adafruit-python-shell #Required for I2S-mic
+    sudo apt-get install libasound2-dev     #Required for pyalsaudio
+    sudo pip3 install pyalsaaudio           #Enables volume control through python
     sudo apt install python3-pyaudio  
-    sudo apt install libpulse-dev     #C++ pulse lib
+    #sudo apt install libpulse-dev           #C++ pulse lib NOT REQUIRED
+    sudo pip3 install pasimple              #Required for VU meter
+    #sudo pip3 install PyAV
+    sudo pip3 install aiortc
+    sudo pip3 install aiohttp
     echo "Modules Ready! "
 fi
 echo " "

@@ -10,10 +10,11 @@ PIXELS          = 16
 DELAY           = .0167        # .0167 is about 60fps
 CONFIRMATION    = True         # This helps prevent overloading the server
 HEADERSIZE      = 10
-IP              = "127.0.0.1"  # socket.gethostname()
+IP              = ""           # socket.gethostname()
 PORT            = 1235
 TIMEOUT_SECONDS = 10
 EXIT_SIG        = 1
+BRIGHTNESS      = .2
 
 def handler(signum, frame):
     global EXIT_SIG
@@ -21,6 +22,21 @@ def handler(signum, frame):
     
     print("Sending end signal to server...", flush=True)
 
+def getIP():
+    global IP;
+    if (IP == ""):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        IP = s.getsockname()[0]
+
+        
+def sendSetup(socket):
+    sendMessage(socket, ["Confirmation", CONFIRMATION])
+    ConfirmationResponse(socket)
+    sendMessage(socket, ["Brightness", BRIGHTNESS])
+    ConfirmationResponse(socket)
+    
+    
 def checkStep(step):
     if step > 765:             # RESET TO A STATE IN RANGE
         step = step - 765
@@ -125,6 +141,7 @@ def recieveMessage(socket):
             full_msg = b''
         
             while True:
+                _, _, _ = select.select([socket], [], []) #Waits for a socket signal
                 msg = socket.recv(16)
             
                 if len(full_msg)==0:
@@ -194,7 +211,7 @@ def colorGlowCycle(socket, pixelStep, speed, brightnessChange, brightness):
     pixelColors      = [(0,0,0)]
 
     global EXIT_SIG
-    
+
     while EXIT_SIG:
         time.sleep(DELAY)
         sendMessage(socket, pixelColors*pixelCount)
@@ -243,8 +260,11 @@ def pixelGuage(socket, pixelStep, colorSpeed, subColorSpeed):
 def main():
 
     signal.signal(signal.SIGINT, handler)
+    getIP()
     client_socket  = createClientSocket(IP, PORT)
-
+    
+    sendSetup(client_socket)
+    
     #rainbowCycle(client_socket, -3)          # socket, colorSpeed
 
     #colorGlowCycle(client_socket, 255, 0,  .1,   3) # socket, stepStart, colorSpeed,  glowSpeed, brightness
@@ -253,7 +273,7 @@ def main():
     #colorGlowCycle(client_socket,   0, 4,  2, 100) 
 
     #pixelCycle(client_socket, 255, 0, 8,  0, 5)      # socket, stepStart, colorSpeed, pixelPos, pixelSpeed, dim
-    #pixelCycle(client_socket, 0, 1,  0, .1, 100)   
+    pixelCycle(client_socket, 0, 1,  0, 1, 100)   
     #pixelCycle(client_socket, 0, 4,  0, .2, 0)      
     #pixelCycle(client_socket, 0, 0,  0, .2, 5)   
     #pixelCycle(client_socket, 0, 1,  0,-.2, 5)   
@@ -265,7 +285,7 @@ def main():
     
     pixelColors = [(0,0,0)]*PIXELS
     sendMessage(client_socket, pixelColors)
-    ConfirmationResponse(socket)
+    ConfirmationResponse(client_socket)
     
 if __name__ == "__main__":
     main()

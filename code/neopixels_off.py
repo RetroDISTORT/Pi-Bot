@@ -16,7 +16,7 @@ num_pixels = 16
 pixels = neopixel.NeoPixel(pixel_pin, num_pixels)
 ORDER = neopixel.GRB
 
-pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.05, auto_write=False, pixel_order=ORDER)
+pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.1, auto_write=False, pixel_order=ORDER)
 
 
 def wheel(pos):
@@ -67,9 +67,11 @@ while True:
 
     # Comment this line out if you have RGBW/GRBW NeoPixels
     pixels.fill((0, 0, 0))
+    #pixels.fill((254, 254, 254))
     # Uncomment this line if you have RGBW/GRBW NeoPixels
     # pixels.fill((0, 0, 255, 0))
     pixels.show()
+    exit();
     #time.sleep(1)
 
 #    rainbow_cycle(0.01)  # rainbow cycle with 1ms delay per step

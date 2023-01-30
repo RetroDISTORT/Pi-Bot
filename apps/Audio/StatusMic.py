@@ -15,22 +15,21 @@ from PIL import Image, ImageDraw, ImageFont
 
 def get_input():
     if GPIO.input(8) == 0:  # UP
-        time.sleep(.1)
         return "UP"
             
     if GPIO.input(25) == 0: # MID
-        time.sleep(.1)
         return "SELECT"
             
     if GPIO.input(7) == 0:  # DOWN
-        time.sleep(.1)
         return "DOWN"
-    
+
+    time.sleep(.05)
     return "NONE"
+
 
 def graph_array(draw, array):
     maxGraph = max(array)
-    minGraph = min(array)
+    minGraph = min(array) if maxGraph != 0 else -1 
     
     for i in range(len(array)-1):
         value1 = 52 - (map_value(array[i]  , minGraph, maxGraph)/2)
