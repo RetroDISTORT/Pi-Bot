@@ -1,0 +1,67 @@
+.controls{
+    background-color: #030;
+    height: 70%;
+}
+
+input{
+    background-color: #444;
+    color: #CCC;
+    border: none;
+    text-decoration: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+input[type=send]:disabled{
+    background-color: #111;
+    color: #555;
+}
+
+input:focus{
+    outline: none;
+}
+
+.controllerImage{
+    transform: translateX(-50%) translateY(-50%);
+    top: 35%;
+    position: absolute;
+}
+
+.controllerElement{
+    top: 35%;
+    position: absolute;
+}
+
+.controllerDiv{
+    background-color: #333;
+    height: 100%;
+    width:  25%;
+}
+
+.screen{
+    background-color: #000;
+    float: left;
+    height: 100%;
+    width:  50%;
+}
+
+pre{
+    color: #FFF;
+    height: 23%;
+    width:  100%;
+    overflow: scroll;
+}
+
+.command{
+    background-color: #111;
+    height: 30%;
+    width:  100%;
+}
+
+html, body {
+    touch-action: none;
+    overflow: hidden;
+    /*position: fixed;*/
+    margin: 0;
+    height: 100%;
+}

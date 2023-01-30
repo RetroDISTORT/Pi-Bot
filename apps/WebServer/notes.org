@@ -1,0 +1,130 @@
+TODO! Set volume control using setup.sh script on pi
+https://learn.adafruit.com/adafruit-i2s-mems-microphone-breakout/raspberry-pi-wiring-test#adding-volume-control-3061641
+
+* Video
+** Netcat
+Note that a smaller cache is faster but less stable
+Client:
+nc -l -p 8080 | mplayer - -fps 20 -cache 1024
+
+Server:
+raspivid -n -w 854 -h 480 -fps 20 -t 9999999 -o - | nc 10.0.0.14 8080
+or with ffmpeg
+"/dev/video0"
+
+** RTP
+note:
+ copy and paste the information given for the server under SDP:
+ 
+server:
+ffmpeg -f v4l2 -framerate 60 -video_size 640x480 -i "/dev/video0" -f rtp -vf "transpose=1, transpose=1" rtp://10.0.0.14:8080
+
+client:
+ffplay -i test.sdp -protocol_whitelist file,udp,rtp
+* Audio
+** Test mic
+without gain control:
+arecord -D plughw:0 -c 1 -r 48000 -f S32_LE -t wav -V mono file.wav
+
+with gain control:
+arecord -D dmic_sv -c1 -r 44100 -f S32_LE -t wav -V mono -v file.wav 
+
+** Netcat Arecord
+Client:
+nc -l -p 8080 | aplay
+
+Server:
+without gain control:
+  arecord -D plughw:0 -c 1 -r 48000 -f S32_LE -t wav | nc 10.0.0.14 8080
+with gain control:
+  arecord -D dmic_sv  -c 1 -r 48000 -f S32_LE -t wav | nc 10.0.0.14 8080
+  
+** Netcat FFMPEG
+*** notes:
+      *-ar:* Sample rate
+           If it is too high /ALSA buffer xrun./ errors will occur.
+           This means that it is sampling to quick for alsa.
+           From the receiving end this will sound like pops or skips.
+
+  *-acodec:* Codec
+           This tells ffmpeg the format of the input audio.
+
+      *-ac:* Channels
+           The number of input channels of the audio stream.
+           This value can be guessed in this case. 
+
+*** Commands
+Server:
+ ffmpeg -ar 12000 -acodec pcm_s32le -ac 2 -f alsa -i dmic_sv -f wav pipe:1 | nc 10.0.0.14 8080
+ or without pipes
+ ffmpeg -ar 12000 -acodec pcm_s32le -ac 2 -f alsa -i dmic_sv -f wav tcp://10.0.0.14:8080
+ or simplified command
+ ffmpeg -ar 12000 -acodec pcm_s32le -f alsa -i dmic_sv -f wav tcp://10.0.0.14:8080
+ 
+Client:
+ nc -l -p 8080 | aplay
+** RTP FFMPEG
+server:
+ ffmpeg -ar 12000 -acodec pcm_s32le -f alsa -i dmic_sv -f rtp rtp://10.0.0.14:8080
+
+client:
+ ffplay -i test.sdp -protocol_whitelist file,udp,rtp
+* Audio and Video
+ffmpeg -ar 12000 -acodec pcm_s32le -f alsa -i dmic_sv -f wav tcp://10.0.0.14:8080
+
+** RTP
+note:
+ copy and paste the information given for the server under SDP:
+ 
+server:
+
+
+ffmpeg \
+-f v4l2 -i "/dev/video0" -f alsa -acodec pcm_s32le -ar 10000 -i dmic_sv \
+-vcodec libx264 -r 60 -s 640x480 \
+-f mpegts -vf "transpose=1, transpose=1" udp://10.0.0.14:8080?pkt_size=1316
+
+
+
+
+
+
+ffmpeg \
+-f v4l2 -framerate 60 -video_size 640x480 -i video="/dev/video0" \
+-f alsa -acodec pcm_s32le -ar 12000 -i dmic_sv \
+-f rtp -vf "transpose=1, transpose=1" rtp://10.0.0.14:8080 
+
+
+ffmpeg -an -f v4l2 -framerate 60 -video_size 640x480 -i "/dev/video0" -vn -ar 12000 -acodec pcm_s32le -f alsa -i dmic_sv -f rtp -vf "transpose=1, transpose=1" rtp://10.0.0.14:8080 
+ffmpeg -f v4l2 -framerate 60 -video_size 640x480 -i "/dev/video0" -f rtp -vf "transpose=1, transpose=1" rtp://10.0.0.14:8080 -ar 12000 -acodec pcm_s32le -f alsa -i dmic_sv -f rtp rtp://10.0.0.14:8080
+ffmpeg -f v4l2 -framerate 60 -video_size 640x480 -i "/dev/video0" -ar 12000 -acodec pcm_s32le -f alsa -i dmic_sv -f rtp -flags -global_header -vf "transpose=1, transpose=1" rtp://10.0.0.14:8080
+
+-flags -global_header
+-thread_queue_size 1024
+
+client:
+ffplay -i test.sdp -protocol_whitelist file,udp,rtp
+* TEST Code
+
+ffmpeg -ar 48k -acodec pcm_s32le -ac 2 -f alsa -i plughw:0 -i tcp://10.0.0.14:8080
+ffmpeg -y -ar 48000 -acodec pcm_s32le -ac 2 -f alsa -i plughw:0 -f wav pipe:1 | tee /dev/tty
+
+nc -l -p 8080 | ffplay -h
+
+ffmpeg -ar 48k -acodec pcm_s32le -ac 2 -f alsa -i plughw:0 test.wav
+
+
+echo "hi" | nc 10.0.0.14 8080
+nc -l -p 8080 | tee /dev/tty
+
+
+ ffmpeg -y -ar 48000 -acodec pcm_s32le -ac 2 -f alsa -i plughw:0 -f wav pipe:1 | nc 10.0.0.14 8080
+ nc -l -p 8080 | aplay
+
+ffmpeg -f alsa -acodec pcm_s32le -i dmic_sv out.wav
+
+
+
+ffmpeg -y -ar 12000 -acodec pcm_s32le -f alsa -i dmic_sv -acodec pcm_s32le out.wav #good recording
+
+

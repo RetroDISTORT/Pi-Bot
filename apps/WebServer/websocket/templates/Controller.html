@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Robot Controller</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='icon/favicon.ico') }}">
+  </head>
+  <body scroll="no">    
+
+    <div style="width: 100%;">
+      <div style="width: 25%; float: left">
+
+	<div style="border: 1px solid red; width: 128px; position: absolute; left:10px; top:150px;">
+	  <img src="static/images/joystick-base.png"/>
+	  <div id="stick1" style="position: absolute; left:32px; top:32px;">
+	    <img src="static/images/joystick-red.png"/>		
+	  </div>
+	</div>
+
+	
+	<!-- <img src="static/images/joystick-base.png"/> -->
+	<!-- <div id="stick1" style="position: absolute; left:32px; top:32px;"> -->
+	<!--   <img src="static/images/joystick-red.png"/> -->
+	<!-- </div> -->
+
+	
+	<p id="joystick_x"> X: 0</p>
+	<p id="joystick_y"> Y: 0</p>
+      </div>
+      
+      <div style="width: 50%; float: left">
+	<!-- 640x480 100%x75%-->
+	<img src="stream.mjpg" width="100%" height="75%">
+	<!-- <video src="rtp://10.0.0.17:8000"> -->
+	<!--   Your browser does not support RTP streams. -->
+	<!-- </video> -->
+      </div>
+      
+      <div style="width: 25%; float: left">
+	<canvas id="slider" width="50" height="300"></canvas>
+	<p id="slider_y"> Y: 0</p>
+      </div>  
+    </div>
+
+    <button onclick="" class="button button1">Green</button>
+    <button class="button button2">Blue</button>
+
+    
+    <!-- <form action="" method="post"> -->
+    <!--   <button name="foo" value="upvote">Upvote</button> -->
+      <!-- </form> -->
+    
+    <script type="text/javascript" src="static/scripts/controller.js"></script>
+  </body>
+</html>

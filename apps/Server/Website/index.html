@@ -1,0 +1,79 @@
+<html>
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Robot Controller WebRTC</title>
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="shortcut icon" href="/static/icon/favicon.ico">
+    <!-- <style> -->
+    <!--   button { -->
+    <!--       padding: 8px 16px; -->
+    <!--   } -->
+      
+    <!--   video { -->
+    <!--       width: 100%; -->
+    <!--   } -->
+      
+    <!--   .option { -->
+    <!--       margin-bottom: 8px; -->
+    <!--   } -->
+      
+    <!--   #media { -->
+    <!--       max-width: 1280px; -->
+    <!-- 	  transform: rotate(180deg); -->
+    <!--   } -->
+    <!-- </style> -->
+  </head>
+  <body scroll="no">
+    
+    <div class="controls">
+      
+      <div class="controllerDiv" style="float:left;">
+	<img class="controllerImage" src="static/images/joystick-base.png" style="left:12.5%;"/>
+	<div id="stick" class="controllerElement" style="left:12.5%;">
+	  <img src="static/images/joystick-blue.png" style="transform: translateX(-50%) translateY(-50%);"/>
+	</div>
+	<p id="slider_y"> Y: 0</p>
+      </div>
+    
+      <div id="media" class="screen">
+	<audio id="audio" autoplay="true"></audio>
+	<video id="video" autoplay="true" playsinline="true"></video>
+      </div>
+    
+
+      <div class="controllerDiv" style="float:right">
+	<img class="controllerImage" src="static/images/joystick-base.png" style="left:87.5%;"/>
+	<div id="slider" class="controllerElement" style="left:87.5%;">
+	  <img src="static/images/joystick-red.png" style="transform: translateX(-50%) translateY(-50%);"/>
+	</div>
+	<p id="joystick_x"> X: 0</p>
+	<p id="joystick_y"> Y: 0</p>
+
+	<div class="option" style="position:fixed; bottom:20%">
+	  <input id="use-stun" type="checkbox"/>
+	  <label for="use-stun">Use STUN server</label>
+	</div>
+	<button id="start" onclick="start()">Start</button>
+	<button id="stop" style="display: none" onclick="stop()">Stop</button>
+	
+      </div>
+      
+    </div>
+
+    <div class="command">
+      <div style="position:fixed; top:70%; height:100%; width:100%">
+	<pre id="commandHistory"></pre>
+      </div>
+      <div style="position:fixed; bottom:0; width:100%;">
+	<input valign="bottom" type="input" id="commandInput" name="fname" placeholder="Command Input..." style="width:88%; float:left; text-align: left;">
+	<input disabled id="sendButton" onclick="sendCommand()" type="send" value="Send" style="width:10%; float: right; text-align: center;">
+      </div>
+
+    </div>
+    
+    <script src="/static/scripts/client.js"></script>
+    
+  </body>
+</html>

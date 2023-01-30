@@ -1,0 +1,65 @@
+# Importing the relevant libraries
+import websockets
+import asyncio
+import json
+from adafruit_servokit import ServoKit
+
+# Server data
+IP   = "10.0.0.17"#"localhost"
+PORT = 9000
+
+# Motor
+kit = ServoKit(channels=16, address = 0x41)
+CAMERA_SPEED = -5
+CAMERA_ANGLE = 0
+
+def motor(x,y,z):
+    global CAMERA_ANGLE
+    M1Speed      = 100 + max(-1,min(1,(y+x)))*80
+    M2Speed      = 100 - max(-1,min(1,(y-x)))*80
+    CAMERA_ANGLE = max(0,min(180,CAMERA_ANGLE+z*CAMERA_SPEED))
+    
+    kit.servo[0].angle = M1Speed
+    kit.servo[3].angle = M2Speed
+    kit.servo[9].angle = CAMERA_ANGLE
+    
+
+async def echo(websocket, path):
+    print("A client just connected")
+    try:
+        async for rawMessage in websocket:
+            print("Received message from client: " + rawMessage)
+            message = json.loads(rawMessage)
+            
+            if "message" in message:
+                await websocket.send(">> " + message["message"])
+                
+            if "joystick_x" in message:
+                motor(float(message["joystick_x"]),float(message["joystick_y"]),float(message["slider_y"]))
+                #websocket.send(">> " + message["joystick_y"]);
+
+            if "led" in message:
+                pass;
+
+            if "display" in message:
+                pass;
+
+            if "update" in message:
+                #send compass update
+                pass;
+            
+    except websockets.exceptions.ConnectionClosed as e:
+        print("A client just disconnected")
+
+def main():
+    kit.servo[0].angle = 100 # Motors stop at 100
+    kit.servo[3].angle = 100 # Motors stop at 100
+    
+    start_server = websockets.serve(echo, IP, PORT)
+
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
+    print("Server listening on " + str(IP)+ ":" + str(PORT))
+
+if __name__ == "__main__":
+    main()
