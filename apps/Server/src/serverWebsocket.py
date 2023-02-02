@@ -7,7 +7,7 @@ class Websocket:
         self.log     = loggerMethod
         self.ip      = ip
         self.port    = port
-        startServer = websockets.serve(self.listen, self.ip, self.port)
+        startServer  = websockets.serve(self.listen, self.ip, self.port)
         
         self.log("Server listening on " + str(self.ip)+ ":" + str(self.port))
         asyncio.get_event_loop().run_until_complete(startServer)
@@ -15,7 +15,7 @@ class Websocket:
         
 
 
-    async def send(self, meessage):
+    async def send(self, websocket, message):
         try:
             await websocket.send(message)
         except:
@@ -23,11 +23,17 @@ class Websocket:
             return False
             
     async def listen(self, websocket, path):
-        self.log("Client connected")
+        self.log("Client " + str(websocket.remote_address) + " connected")
         try:
             async for message in websocket: 
-                self.log("Received message from client: " + message)
-                self.execute(message)
+                self.log("Message from client " + str(websocket.remote_address) + ":" + message)
+                serverMessage = self.execute(message)
+                if serverMessage:
+                    self.log("Message to client " + str(websocket.remote_address) + ":" + serverMessage)
+                    await self.send(websocket, serverMessage)
+                
             
         except websockets.exceptions.ConnectionClosed as e:
-            self.log("Client disconnected")
+            self.log("Client Exception " + str(websocket.remote_address) + ": " + str(e))
+
+        self.log("Client " + str(websocket.remote_address) + " disconnected")

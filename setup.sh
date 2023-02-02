@@ -135,6 +135,14 @@ then
     sudo apt-get install python3-pil
     sudo apt-get install python3-numpy
     sudo python3 -m pip install --force-reinstall adafruit-blinka # Required for board and digitalio
+    
+    if grep -q "dtparam=i2c_baudrate=1000000" "/boot/config.txt"; then
+	echo "i2c speed is already at 1MHz"
+    else
+	sudo echo "dtparam=i2c_baudrate=1000000" >> /boot/config.txt
+	echo "I2C baudrate set at 1MHz"
+    fi
+    
     echo "OLED driver installation done!"
 fi
 echo " "
