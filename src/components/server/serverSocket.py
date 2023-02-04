@@ -1,9 +1,7 @@
-import time
 import socket      # Required for sockets
 import select      # Required for sockets
 
-
-class Socket:
+class ServerSocket:
     def __init__(self, ip, port, executeMethod, loggerMethod):
         self.execute    = executeMethod
         self.log        = loggerMethod
@@ -18,10 +16,11 @@ class Socket:
         self.log(f'Listening for connections on {self.ip}:{self.port}')
 
         
-    def send(self, message):
+    def send(self, socket,  message):
         try:
+            message = bytes(message, 'utf-8')
             message = bytes(f"{len(message):<{self.headerSize}}", 'utf-8')+message
-            self.socket.send(message)
+            socket.send(message)
         except:
             self.log("Error sending message")
             return False
@@ -44,7 +43,7 @@ class Socket:
                     return fullMessage[self.headerSize:]
 
         except:
-            self.log('Error getting message. Check header size')
+            self.log('Error getting message. Check header size.')
             EXIT_SIG = 0
             return False
 
@@ -62,4 +61,8 @@ class Socket:
                     self.log("Client Disconnected")
                     break
                 else:
-                    self.execute(message)
+                    self.log("Client Message:" + str(message))
+                    serverMessage = self.execute(message)
+                    if serverMessage:
+                        self.log("Message to client: " + serverMessage)
+                        self.send(clientSocket, serverMessage)

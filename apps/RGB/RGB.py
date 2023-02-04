@@ -1,26 +1,42 @@
 import time
+import sys
 import errno
 import socket
 import signal      # Required for handler
 import pickle      # Required to convert objects to raw data
 import select
+
 from math import ceil as ceil
+from threading import Thread, Event, Lock
+
+sys.path.insert(1,'/opt/boobot/apps/Server/src/client')
+from clientSocket import ClientSocket
 
 PIXELS          = 16
 DELAY           = .0167        # .0167 is about 60fps
 CONFIRMATION    = True         # This helps prevent overloading the server
 HEADERSIZE      = 10
-IP              = ""           # socket.gethostname()
-PORT            = 1235
+IP              = ""          # socket.gethostname()
+PORT            = 9000
 TIMEOUT_SECONDS = 10
 EXIT_SIG        = 1
 BRIGHTNESS      = .2
 
+# REQUIRED FOR THREADS
+messageLock      = Lock()
+newMessageEvent  = Event()
+newMessageEvent.clear()
+
+
 def handler(signum, frame):
     global EXIT_SIG
-    EXIT_SIG = 0
     
-    print("Sending end signal to server...", flush=True)
+    if EXIT_SIG == 1: # Force shutdown
+        exit()
+    
+    EXIT_SIG = 0
+    print("Terminating program...", flush=True)
+    
 
 def getIP():
     global IP;
@@ -29,13 +45,38 @@ def getIP():
         s.connect(("8.8.8.8", 80))
         IP = s.getsockname()[0]
 
+##################
+# SERVER METHODS ########################################################################################################
+##################
+            
+def sendToServer(message, pixelColors):
+    with messageLock:
+        message.clear()
+        message += pixelColors[:]
+        newMessageEvent.set()
+
         
-def sendSetup(socket):
-    sendMessage(socket, ["Confirmation", CONFIRMATION])
-    ConfirmationResponse(socket)
-    sendMessage(socket, ["Brightness", BRIGHTNESS])
-    ConfirmationResponse(socket)
+def ClientManager(message):
+    socket = ClientSocket(IP,PORT)
     
+    while EXIT_SIG:
+        newMessageEvent.wait()
+        with messageLock:
+            messageCopy = message[:]
+            message.clear()
+            newMessageEvent.clear()
+
+        pixelData = [list(pixel) for pixel in messageCopy]
+        jsonMessage = ('{"device":  "LED",'
+                       '"command": "setPixels",'
+                       '"colors":' + str(pixelData) +
+                       '}')
+        socket.send(jsonMessage)
+        socket.recieve()        
+        
+###########################
+# RGB PIXEL COLOR CONTROL ###############################################################################################
+###########################
     
 def checkStep(step):
     if step > 765:             # RESET TO A STATE IN RANGE
@@ -64,26 +105,29 @@ def rainbow(step):
             
     return (int(R),int(G),int(B)), step
 
-def mapValue(value, fromMinimum, fromMaximum, toMinimum, toMaximum):
-    #
-    # USAGE EXAMPLE 
-    #
-    # for i in range(101):
-    #     print(str(i) + "\t-\t" + str(mapValue(i, 0, 100, 0, 255)))
+
+def MapValue(value, fromMinimum, fromMaximum, toMinimum, toMaximum):
+    if value==fromMaximum:
+        return toMaximum #Rounding in the last line may cause it to return a greater value
+    if value==fromMinimum:
+        return toMinimum
+    
     inMax    = abs(fromMinimum-fromMaximum)
     outMax   = abs(toMinimum-toMaximum)
     newValue = value - fromMinimum 
 
-    return 0 if outMax<=0 else (newValue*outMax/inMax)+toMinimum
+    return 0 if inMax==0 else (newValue*outMax/inMax)+toMinimum
+
 
 def pixelBrightness(pixel, percentage):
     #Assuming the current color is max value
     dimmedColors =[]
     for maxColor in range(len(pixel)):
-        dimmedColor = int(mapValue(percentage, 0, 100, 0, pixel[maxColor]))
+        dimmedColor = int(MapValue(percentage, 0, 100, 0, pixel[maxColor]))
         dimmedColors.append(dimmedColor)
             
     return tuple(dimmedColors)
+
 
 def dimPixels(pixelColors, dim):
     for pixel in range(len(pixelColors)):
@@ -96,10 +140,11 @@ def dimPixels(pixelColors, dim):
 
     return pixelColors
 
+
 def guage(value, pixelStep, colorSpeed, minValue, maxValue):
     pixelColors         = [(0,0,0)]*PIXELS
     lastColor           = [(0,0,0)]
-    pixelsOn            = mapValue(value, minValue, maxValue, 0, PIXELS)
+    pixelsOn            = MapValue(value, minValue, maxValue, 0, PIXELS)
     lastPixelBrightness = (pixelsOn-int(pixelsOn))*100
 
     for pixel in range(ceil(pixelsOn)):
@@ -108,64 +153,11 @@ def guage(value, pixelStep, colorSpeed, minValue, maxValue):
 
     if lastPixelBrightness != 0:
         pixelColors[ceil(pixelsOn)-1] = pixelBrightness(pixelColors[ceil(pixelsOn)-1], lastPixelBrightness)
-
             
     return pixelColors, pixelStep
 
-def createClientSocket(IP, PORT):
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((IP, PORT))
-    client_socket.setblocking(False)
     
-    return client_socket
-
-def sendMessage(socket, obj):    
-    msg = pickle.dumps(obj)
-    msg = bytes(f"{len(msg):<{HEADERSIZE}}", 'utf-8')+msg
-    #print(msg)
-    socket.send(msg)
-
-def ConfirmationResponse(socket):
-    if CONFIRMATION == False:
-        return
-    
-    msg = recieveMessage(socket)
-    if msg==False:
-        print("Bad Server Response\n Closing Program.")
-        exit()
-
-    
-def recieveMessage(socket):
-    while EXIT_SIG:
-        try:
-            full_msg = b''
-        
-            while True:
-                _, _, _ = select.select([socket], [], []) #Waits for a socket signal
-                msg = socket.recv(16)
-            
-                if len(full_msg)==0:
-                    msglen = int(msg[:HEADERSIZE])
-                    new_msg = False
-
-                full_msg += msg
-
-                if len(full_msg)-HEADERSIZE == msglen:
-                    return full_msg[HEADERSIZE:]
-
-        except IOError as e:
-            if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
-                print('Reading error: {}'.format(str(e)))
-                sys.exit()
-
-                # We just did not receive anything
-                continue
-
-        except Exception as e:
-            print('Reading error: '.format(str(e)))
-            exit()
-    
-def pixelCycle(socket, step, colorSpeed, pixelPos, pixelSpeed, dim):
+def pixelCycle(message, step, colorSpeed, pixelPos, pixelSpeed, dim):
     pixelCount   = 16
     pixelStep    = step
     pixelColors  = [(0,0,0)]*pixelCount
@@ -187,10 +179,9 @@ def pixelCycle(socket, step, colorSpeed, pixelPos, pixelSpeed, dim):
         pixelColors = dimPixels(pixelColors, dim)
         
         pixelColors[int(pixelPos)], pixelStep = rainbow(pixelStep)
-        sendMessage(socket, pixelColors)
-        ConfirmationResponse(socket)
+        sendToServer(message, pixelColors)
             
-def rainbowCycle(socket, speed):
+def rainbowCycle(message, speed):
     pixelCount  = 16;
     pixelColors = [(0,0,0)]*pixelCount
     #pixelStep  = [0]*pixelCount
@@ -200,13 +191,12 @@ def rainbowCycle(socket, speed):
     
     while EXIT_SIG:
         time.sleep(DELAY)
-        sendMessage(socket, pixelColors)
-        ConfirmationResponse(socket)
+        sendToServer(message, pixelColors)
         for i in range(pixelCount):
             pixelStep[i] += speed
             pixelColors[i], pixelStep[i] = rainbow(pixelStep[i])
 
-def colorGlowCycle(socket, pixelStep, speed, brightnessChange, brightness):
+def colorGlowCycle(message, pixelStep, speed, brightnessChange, brightness):
     pixelCount       = 16;
     pixelColors      = [(0,0,0)]
 
@@ -214,8 +204,7 @@ def colorGlowCycle(socket, pixelStep, speed, brightnessChange, brightness):
 
     while EXIT_SIG:
         time.sleep(DELAY)
-        sendMessage(socket, pixelColors*pixelCount)
-        ConfirmationResponse(socket)
+        sendToServer(message, pixelColors)
         
         brightness += brightnessChange;
         if not (0 <= brightness and brightness <= 100):
@@ -227,7 +216,7 @@ def colorGlowCycle(socket, pixelStep, speed, brightnessChange, brightness):
         pixelColors[0] = pixelBrightness(pixelColors[0], brightness)
 
         
-def pixelGuage(socket, pixelStep, colorSpeed, subColorSpeed):
+def pixelGuage(message, pixelStep, colorSpeed, subColorSpeed):
     pixelCount   = 16;
 
     global EXIT_SIG
@@ -236,8 +225,7 @@ def pixelGuage(socket, pixelStep, colorSpeed, subColorSpeed):
         for value in range(301):
             pixelStep = checkStep(pixelStep)
             pixelColors, _ = guage(value, pixelStep, subColorSpeed, 0, 300)
-            sendMessage(socket, pixelColors)
-            ConfirmationResponse(socket)
+            sendToServer(message, pixelColors)
             time.sleep(DELAY)
 
             pixelStep-=colorSpeed
@@ -248,8 +236,7 @@ def pixelGuage(socket, pixelStep, colorSpeed, subColorSpeed):
         for value in range(300,-1,-1):
             pixelStep = checkStep(pixelStep)
             pixelColors, _ = guage(value, pixelStep, subColorSpeed, 0, 300)
-            sendMessage(socket, pixelColors)
-            ConfirmationResponse(socket)
+            sendToServer(message, pixelColors)
             time.sleep(DELAY)
 
             pixelStep-=colorSpeed
@@ -258,34 +245,32 @@ def pixelGuage(socket, pixelStep, colorSpeed, subColorSpeed):
                 return
         
 def main():
-
+    message    = []
     signal.signal(signal.SIGINT, handler)
-    getIP()
-    client_socket  = createClientSocket(IP, PORT)
     
-    sendSetup(client_socket)
+    clientThread = Thread(target=ClientManager, args=(message, ))
+    clientThread.start()
     
-    #rainbowCycle(client_socket, -3)          # socket, colorSpeed
+    #rainbowCycle(message, -3)          # socket, colorSpeed
 
-    #colorGlowCycle(client_socket, 255, 0,  .1,   3) # socket, stepStart, colorSpeed,  glowSpeed, brightness
-    #colorGlowCycle(client_socket,   0, 0,  0,   3) 
-    #colorGlowCycle(client_socket,   0, 0,  2, 100) 
-    #colorGlowCycle(client_socket,   0, 4,  2, 100) 
+    #colorGlowCycle(message, 255, 0,  .1,   3) # socket, stepStart, colorSpeed,  glowSpeed, brightness
+    #colorGlowCycle(message,  0, 0,  0,   3) 
+    #colorGlowCycle(message,  0, 0,  2, 100) 
+    #colorGlowCycle(message,  0, 4,  2, 100) 
 
-    #pixelCycle(client_socket, 255, 0, 8,  0, 5)      # socket, stepStart, colorSpeed, pixelPos, pixelSpeed, dim
-    pixelCycle(client_socket, 0, 1,  0, 1, 100)   
-    #pixelCycle(client_socket, 0, 4,  0, .2, 0)      
-    #pixelCycle(client_socket, 0, 0,  0, .2, 5)   
-    #pixelCycle(client_socket, 0, 1,  0,-.2, 5)   
+    #pixelCycle(message, 255, 0, 8,  0, 5)      # socket, stepStart, colorSpeed, pixelPos, pixelSpeed, dim
+    #pixelCycle(message, 0, 1,  0, 1, 100)   
+    #pixelCycle(message, 0, 4,  0, .2, 0)      
+    #pixelCycle(message, 0, 0,  0, .2, 5)   
+    #pixelCycle(message, 0, 1,  0,-.2, 5)   
     
-    #pixelGuage(client_socket, 0,  0, 0)      # stepStart, colorSpeed, subColorSpeed
-    #pixelGuage(client_socket, 0,  0, 17.4)   
-    #pixelGuage(client_socket, 0,  2,  0)     
-    #pixelGuage(client_socket, 5, 10, -50)     
+    #pixelGuage(message, 0,  0, 0)      # stepStart, colorSpeed, subColorSpeed
+    #pixelGuage(message, 0,  0, 17.4)   
+    #pixelGuage(message, 0,  2,  0)     
+    #pixelGuage(message, 5, 10, -50)     
     
     pixelColors = [(0,0,0)]*PIXELS
-    sendMessage(client_socket, pixelColors)
-    ConfirmationResponse(client_socket)
+    sendToServer(message, pixelColors)
     
 if __name__ == "__main__":
     main()

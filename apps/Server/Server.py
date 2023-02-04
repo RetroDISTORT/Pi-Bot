@@ -1,9 +1,13 @@
 import json
 import sys
+import logging
 
-sys.path.insert(1, './src/')
-from serverWebsocket     import Websocket
-from serverSocket        import Socket
+#sys.path.insert(1, '/opt/boobot/src/components/server')
+sys.path.insert(1, '../../src/components/server')
+from serverWebsocket     import ServerWebsocket
+from serverSocket        import ServerSocket
+
+sys.path.insert(1, '/opt/boobot/src/components/devices')
 from servoSet            import ServoSet
 from notificationRing    import NotificationRing
 from notificationDisplay import NotificationDisplay
@@ -19,11 +23,16 @@ display = NotificationDisplay()
 
 
 def logger(log):
-    print("log:", log)
+    #print("log:", log)
+    pass
 
 def execute(message):
     global CONFIRM
-    input = json.loads(message)
+    print(message)
+    try:
+        input = json.loads(message)
+    except ValueError:  # includes simplejson.decoder.JSONDecodeError
+        return
 
     if input["device"] == "Server":
         if input["command"] == "confirmation":
@@ -65,8 +74,8 @@ def execute(message):
         return('{"confirmation": True}')
 
 def main():
-    ws = Websocket(IP, PORT, execute, logger)
-    #socket = Socket(IP, PORT, execute, logger)
+    ws = ServerWebsocket(IP, PORT, execute, logger)
+    #socket = ServerSocket(IP, PORT, execute, logger)
     #socket.listen()
     
     

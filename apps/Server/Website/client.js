@@ -279,11 +279,18 @@ function update()
     document.getElementById("joystick_x").innerText = "x: " + joystick.value.x;
     document.getElementById("joystick_y").innerText = "y: " + joystick.value.y;
     document.getElementById("slider_y").innerText   = "y: " + slider.value.y;
-    message = {'joystick_x' : String(joystick.value.x),
-	       'joystick_y' : String(joystick.value.y),
-	       'slider_y'   : String(slider.value.y)
-	      }
+
+    servo1 = 100 + Math.max(-1, Math.min(1, joystick.value.x + joystick.value.y)) * 80;
+    servo2 = 100 - Math.max(-1, Math.min(1, joystick.value.x + joystick.value.y)) * 80;
+    servo3 = "None";//Math.max(0, Math.min(180, slider.value.y)) * 80;
     
+    message = {'device'           : "Servo",
+	       'command'          : "setAllServos",
+	       'leftServoAngle'   : String(servo1),
+	       'rightServoAngle'  : String(servo2),
+	       'cameraServoAngle' : String(servo3)
+	      }
+    console.log(message)
     send(JSON.stringify(message));
 }
 

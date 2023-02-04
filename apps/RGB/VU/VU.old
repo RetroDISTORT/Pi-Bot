@@ -41,6 +41,11 @@ messageLock      = Lock()
 newMessageEvent  = Event()
 newMessageEvent.clear()
 
+# REQUIRED FOR SERVER OPTIONS
+SERVERMODE       = True
+
+
+
 def handler(signum, frame):
     global EXIT_SIG
     
@@ -54,35 +59,88 @@ def handler(signum, frame):
 ##################
 # SERVER METHODS ########################################################################################################
 ##################
-            
-def sendToServer(message, pixelColors):
-    with messageLock:
-        message.clear()
-        message += pixelColors[:]
-        newMessageEvent.set()
+
+def createClientSocket(IP, PORT):
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((IP, PORT))
+    client_socket.setblocking(False)
+    
+    return client_socket
+
+
+def sendMessage(socket, obj):
+    msg = pickle.dumps(obj)
+    msg = bytes(f"{len(msg):<{HEADERSIZE}}", 'utf-8')+msg
+    socket.send(msg)
+
+    
+def ConfirmationResponse(socket):
+    global EXIT_SIG
+    
+    if CONFIRMATION == False:
+        return
+
+    msg = recieveMessage(socket)
+    if msg==False:
+        print("Bad Server Response\n Closing Program.")
+        EXIT_SIG = 0
+        exit()
 
         
-def ClientManager(message):
-    socket = ClientSocket(IP,PORT)
+def recieveMessage(socket):
+    global EXIT_SIG
     
     while EXIT_SIG:
-        newMessageEvent.wait()
-        with messageLock:
-            messageCopy = message[:]
-            message.clear()
-            newMessageEvent.clear()
+        try:
+            full_msg = b''
+        
+            while True:
+                _, _, _ = select.select([socket], [], []) #Waits for a socket signal
+                msg = socket.recv(16)
+                if len(full_msg)==0:
+                    msglen = int(msg[:HEADERSIZE])
+                    new_msg = False
 
-        pixelData = [list(pixel) for pixel in messageCopy]
-        jsonMessage = ('{"device":  "LED",'
-                       '"command": "setPixels",'
-                       '"colors":' + str(pixelData) +
-                       '}')
-        socket.send(jsonMessage)
-        socket.recieve()        
+                full_msg += msg
+
+                if len(full_msg)-HEADERSIZE == msglen:
+                    return full_msg[HEADERSIZE:]
+
+        except IOError as e:
+            if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
+                print('Reading error: {}'.format(str(e)))
+                EXIT_SIG = 0
+                exit()
+
+            # We just did not receive anything
+            continue
+
+        except Exception as e:
+            print('Reading error: '.format(str(e)))
+            EXIT_SIG = 0
+            exit()
+
+            
+def sendToServer(socket, message, pixelColors):
+    if SERVERMODE:                    # Send a thread to handle messages
+        with messageLock:
+            message.clear()
+            message += pixelColors[:]
+            newMessageEvent.set()         
+    else:                             # Send without using thread
+        sendMessage(socket, pixelColors)
+        ConfirmationResponse(socket)
+
         
 ###########################
 # RGB PIXEL COLOR CONTROL ###############################################################################################
 ###########################
+
+def sendSetup(socket):
+    sendMessage(socket, ["Confirmation", CONFIRMATION])
+    ConfirmationResponse(socket)
+    sendMessage(socket, ["Brightness", BRIGHTNESS])
+    ConfirmationResponse(socket)
 
 def checkStep(step):
     if step > 765:             # RESET TO A STATE IN RANGE
@@ -146,9 +204,9 @@ def guage(value, pixels, pixelStep, colorSpeed, minValue, maxValue):
 
     if lastPixelBrightness != 0:
         pixelColors[ceil(pixelsOn)-1] = pixelBrightness(pixelColors[ceil(pixelsOn)-1], lastPixelBrightness)
+
             
     return pixelColors, pixelStep
-
 
 def brightnessGuage(value, pixels, minValue, maxValue):
     brightness          = [0]*pixels
@@ -298,6 +356,7 @@ def VUFFT():
 
 def VUDFTRGB(message):
     audio       = CreateVU()
+    socket      = createClientSocket(IP, PORT)
     decay       = .9
     pixelCount  = 16
     count       = 0
@@ -311,7 +370,7 @@ def VUDFTRGB(message):
     resetMax    = 40000  # How often is max gets reset
     resetCount  = 0
     VUMax       = 0
-    boost       = .01
+    boost       = 2
     
     while EXIT_SIG:
         audio_data = audio.read(audio_channels * audio_samples * pasimple.format2width(audio_format)*extra)
@@ -335,7 +394,7 @@ def VUDFTRGB(message):
         for i in range(16):
             brightness[i] *= decay
             brightness[i]  = VULevels[i] if VULevels[i] > brightness[i] else brightness[i]
-            VULevels[i]    = VULevels[i] if VULevels[i]*boost >= VUMax else VULevels[i]*boost #have more leds reach max
+            VULevels[i] = VUMax if VULevels[i]*boost >= VUMax else VULevels[i]*boost #have more leds reach max
 
             pixelStep   += stepSpeed
             pixelColors[i], _ = rainbow(pixelStep) # Rainbow color
@@ -344,12 +403,13 @@ def VUDFTRGB(message):
 
             pixelColors[i] = pixelBrightness(pixelColors[i], MapValue(brightness[i], 0, VUMax, 0, 100))
 
-        sendToServer(message, pixelColors)
+        sendToServer(socket, message, pixelColors)
 
             
 
 def VUDFTRGB3P(message):
     audio         = CreateVU()
+    socket        = createClientSocket(IP, PORT)
     decay         = .80
     pixelCount    = 16
     color         = 0
@@ -411,22 +471,26 @@ def VUDFTRGB3P(message):
             pixelColors[pixel], pixelStep = rainbow(pixelStep)
             pixelColors[pixel]            = pixelBrightness(pixelColors[pixel], max(allBrightness[pixel],2))
 
-        sendToServer(message, pixelColors)
+        sendToServer(socket, message, pixelColors)
     
     
 def RGB_OFF():
+    socket      = createClientSocket(IP, PORT)
     pixelCount  = 16;
         
     pixelColors = [(0,0,0)]*PIXELS
-    sendToServer(message, pixelColors)
+    sendToServer(socket, message, pixelColors)
 
 
 def VURGB(message, pixelStep, colorSpeed, subColorSpeed, decay, reset):
+    socket      = createClientSocket(IP, PORT)
     audio       = CreateVU()
     pixelCount  = 16;
     maxVU       = 0
     count       = 0
     CPeaks      = [0]*2
+
+    #sendSetup(socket)
     
     while EXIT_SIG:
         if count == 0:
@@ -454,16 +518,17 @@ def VURGB(message, pixelStep, colorSpeed, subColorSpeed, decay, reset):
         pixelStep = checkStep(pixelStep)
         pixelColors, _ = guage(volume, pixelCount, pixelStep, subColorSpeed, 0, 5001)
         
-        sendToServer(message, pixelColors)
+        sendToServer(socket, message, pixelColors)
 
         pixelStep-=colorSpeed
         
     pixelColors = [(0,0,0)]*PIXELS
     
-    sendToServer(message, pixelColors)
+    sendToServer(socket, message, pixelColors)
 
 
 def pixelCycle(message, step, colorSpeed, pixelPos, pixelSpeed, dim):
+    socket      = createClientSocket(IP, PORT)
     pixelCount   = 16
     pixelStep    = step
     pixelColors  = [(0,0,0)]*pixelCount
@@ -486,20 +551,39 @@ def pixelCycle(message, step, colorSpeed, pixelPos, pixelSpeed, dim):
         
         pixelColors[int(pixelPos)], pixelStep = rainbow(pixelStep)
 
-        sendToServer(message, pixelColors)
+        sendToServer(socket, message, pixelColors)
     
+
+def ClientManager(message):
+    socket      = createClientSocket(IP, PORT)
+    sendSetup(socket);
+    
+    while EXIT_SIG:
+        #print("??")
+        newMessageEvent.wait()
+        with messageLock:
+            messageCopy = message[:]
+            message.clear()
+            newMessageEvent.clear()
+        sendMessage(socket, messageCopy)
+        ConfirmationResponse(socket)
+
         
 def main():    
     message    = []
     signal.signal(signal.SIGINT, handler)
 
-    clientThread = Thread(target=ClientManager, args=(message, ))
-    clientThread.start()
+    # Use Client thread when running remote
+    # The thread will prevent the VU from hanging while the server replies
+    # Also good for slow networks
+    if SERVERMODE:
+        clientThread = Thread(target=ClientManager, args=(message, ))
+        clientThread.start()
 
     #pixelCycle(message, 255, 0, 8,  1, 50)      # message, stepStart, colorSpeed, pixelPos, pixelSpeed, dim    
     VUDFTRGB(message)                                 # CPU AVG. 40.0   NOW  9 - 12!!
     #VUDFTRGB3P(message)                               # CPU AVG. 39.3   NOW  9 - 12!!
-    #VURGB(message, 0, -2, 17.4, .65, 4000)             # CPU AVG. 41.2   NOW  5 - 6.6
+    #VURGB(message, 0, -2, 17.4, .65, 4000)            # CPU AVG. 41.2   NOW  5 - 6.6
     
     RGB_OFF()
     

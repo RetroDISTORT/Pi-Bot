@@ -1,13 +1,13 @@
 import asyncio    # Used for websockets
 import websockets # Used for websockets
 
-class Websocket:
+class ServerWebsocket:
     def __init__(self, ip, port, executeMethod, loggerMethod):
         self.execute = executeMethod
         self.log     = loggerMethod
         self.ip      = ip
         self.port    = port
-        startServer  = websockets.serve(self.listen, self.ip, self.port)
+        startServer  = websockets.serve(self.listen, self.ip, self.port, reuse_port=True )
         
         self.log("Server listening on " + str(self.ip)+ ":" + str(self.port))
         asyncio.get_event_loop().run_until_complete(startServer)
