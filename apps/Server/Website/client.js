@@ -293,8 +293,8 @@ function update()
 	       'rightServoAngle'  : String(servo2),
 	       'cameraServoAngle' : String(servo3)
 	      }
-    //console.log(message)
-    //send(JSON.stringify(message));
+    console.log(message)
+    send(JSON.stringify(message));
 }
 
 function sendCommand(){
@@ -332,14 +332,11 @@ function resize(){
 let joystick = new JoystickController("stick", 64, 4);
 let slider   = new SliderController("slider", 64, 4);
 
-//console.log(video)
-
-
-
 //Full screen
 //var elem = document.documentElement;
 //elem.requestFullscreen();
 
+console.log("hello")
 
 init();
 
