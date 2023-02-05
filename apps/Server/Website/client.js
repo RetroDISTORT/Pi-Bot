@@ -1,6 +1,9 @@
 var pc = null;
 let ws;
 
+let video        = document.getElementById("video");
+var videoWidth   = video.outerWidth;
+var videoHeight  = video.outerHeight;
 
 function send(data) {
     if (!ws){
@@ -70,7 +73,7 @@ function negotiate() {
     });
 }
 
-function start() {
+function startStream() {
     var config = {
         sdpSemantics: 'unified-plan'
     };
@@ -90,14 +93,14 @@ function start() {
         }
     });
 
-    document.getElementById('start').style.display = 'none';
+    document.getElementById('startStreamButton').style.display = 'none';
     negotiate();
-    document.getElementById('stop').style.display = 'inline-block';
+    document.getElementById('stopStreamButton').style.display = 'inline-block';
 }
 
 
-function stop() {
-    document.getElementById('stop').style.display = 'none';
+function stopStream() {
+    document.getElementById('stopStreamButton').style.display = 'none';
 
     // close peer connection
     setTimeout(function() {
@@ -290,8 +293,8 @@ function update()
 	       'rightServoAngle'  : String(servo2),
 	       'cameraServoAngle' : String(servo3)
 	      }
-    console.log(message)
-    send(JSON.stringify(message));
+    //console.log(message)
+    //send(JSON.stringify(message));
 }
 
 function sendCommand(){
@@ -302,7 +305,6 @@ function sendCommand(){
 }
 
 function showMessage(message) {
-    console.log("hey");
     commandHistory = document.getElementById("commandHistory");
     commandHistory.textContent += `\n${message}`;
     commandHistory.scrollTop = commandHistory.scrollHeight;
@@ -310,10 +312,35 @@ function showMessage(message) {
 }
 
 
-let joystick = new JoystickController("stick", 64, 8);
-let slider   = new SliderController("slider", 64, 8);
+function resize(){
+    let screen = document.getElementById("media");
+    let video        = document.getElementById("video");
+    var videoWidth   = video.clientWidth;
+    var videoHeight  = video.clientHeight;
+    
+    screenWidth  = screen.offsetWidth;
+    screenHeight = screen.offsetHeight;
+    
+    scale = Math.min(
+	screenHeight / videoHeight,
+	screenWidth / videoWidth
+    );
+
+    video.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+}
+
+let joystick = new JoystickController("stick", 64, 4);
+let slider   = new SliderController("slider", 64, 4);
+
+//console.log(video)
+
+
+
+//Full screen
+//var elem = document.documentElement;
+//elem.requestFullscreen();
 
 
 init();
 
-var t=setInterval(update,40);
+var t=setInterval(update, 40);

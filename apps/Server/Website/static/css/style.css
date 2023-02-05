@@ -38,10 +38,12 @@ input:focus{
     width:  25%;
 }
 
-
-video {
-    width: 100%;
-    transform: rotate(180deg);
+.video {
+    text-align: center;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform-origin: center center;
 }
 
 .screen{

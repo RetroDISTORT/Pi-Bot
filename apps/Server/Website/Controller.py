@@ -19,7 +19,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST','GET'])
 def home():
-    return render_template('./Controller.html')
+    return render_template('./index.html')
 
         
 def main():
