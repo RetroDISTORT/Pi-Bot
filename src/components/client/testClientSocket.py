@@ -3,7 +3,8 @@ sys.path.insert(1, './')
 from clientSocket import ClientSocket
 
 IP   = "10.0.0.17"
-PORT = 9000 
+IP   = "192.168.43.214"
+PORT = 9001 
 
 servoTest1 = ('{'
              '"device":           "Servo",'
@@ -21,6 +22,12 @@ servoTest2 = ('{'
              '}')
 
 servoTest3 = ('{'
+             '"device":  "Servo",'
+             '"command": "getServo",'
+             '"servo":   9'
+             '}')
+
+servoTest4 = ('{'
              '"device":  "Servo",'
              '"command": "Disable"'
              '}')
@@ -77,6 +84,36 @@ serverTest1 = ('{'
               '}'
               )
 
+batteryTest1 = ('{'
+              '"device":  "Battery",'
+              '"command": "voltage"'
+              '}'
+              )
+
+batteryTest2 = ('{'
+              '"device":  "Battery",'
+              '"command": "charge"'
+              '}'
+              )
+
+batteryTest3 = ('{'
+              '"device":  "Battery",'
+              '"command": "current"'
+              '}'
+              )
+
+batteryTest4 = ('{'
+              '"device":  "Battery",'
+              '"command": "charging"'
+              '}'
+              )
+
+batteryTest5 = ('{'
+              '"device":  "Battery",'
+              '"command": "shunt"'
+              '}'
+              )
+
 userTest = ('{'
              '"device":  "Display",'
              '"command": "showMessage",'
@@ -84,5 +121,5 @@ userTest = ('{'
              '}')
 
 socket = ClientSocket(IP, PORT)
-socket.send(serverTest1)
+socket.send(servoTest3)
 print(socket.recieve())

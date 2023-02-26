@@ -2,33 +2,40 @@ import json
 import sys
 import logging
 
-#sys.path.insert(1, '/opt/boobot/src/components/server')
-sys.path.insert(1, '../../src/components/server')
+sys.path.insert(1, '/opt/boobot/src/components/server')
+#sys.path.insert(1, '../../src/components/server')
 from serverWebsocket     import ServerWebsocket
 from serverSocket        import ServerSocket
 
 sys.path.insert(1, '/opt/boobot/src/components/devices')
+#sys.path.insert(1, '../../src/components/devices')
 from servoSet            import ServoSet
 from notificationRing    import NotificationRing
 from notificationDisplay import NotificationDisplay
+from batterySensor       import BatterySensor
 
 # Server data
-IP      = "10.0.0.17" #"localhost"
-PORT    = 9000
-CONFIRM = True        # Send a response to client to notify if the command has completed
+IP             = "" #"localhost"
+CONFIRM        = True        # Send a response to client to notify if the command has completed
+SOCKET_PORT    = 9001
+WEBSOCKET_PORT = 9000
 
 servos  = ServoSet()
 ring    = NotificationRing()
 display = NotificationDisplay()
+battery = BatterySensor()
 
-
+servos.servoAngle(0, None)
+servos.servoAngle(3, None)
+servos.servoAngle(9, None)
+    
 def logger(log):
     #print("log:", log)
     pass
 
 def execute(message):
     global CONFIRM
-    print(message)
+
     try:
         input = json.loads(message)
     except ValueError:  # includes simplejson.decoder.JSONDecodeError
@@ -46,6 +53,9 @@ def execute(message):
 
         elif input["command"] == "setServo":
             servos.servoAngle(input["servo"], input["angle"])
+
+        elif input["command"] == "getServo":
+            return str(servos.getServoAngle(input["servo"]))
             
         elif input["command"] == "Disable":
             servos.disableServos()
@@ -70,13 +80,34 @@ def execute(message):
         elif input["command"] == "setPixels":
             ring.setPixels(input["colors"])
 
+    elif input["device"] == "Battery":
+        if input["command"] == "voltage":
+            battery.update()
+            return(str(battery.getVoltage()))
+
+        if input["command"] == "current":
+            battery.update()
+            return(str(battery.getCurrent()))
+
+        if input["command"] == "shunt":
+            battery.update()
+            return(str(battery.getShuntVoltage()))
+
+        if input["command"] == "charge":
+            battery.update()
+            return(str(battery.getCharge()))
+
+        if input["command"] == "charging":
+            battery.update()
+            return(str(battery.charging()))
+
     if CONFIRM:
         return('{"confirmation": True}')
 
 def main():
-    ws = ServerWebsocket(IP, PORT, execute, logger)
-    #socket = ServerSocket(IP, PORT, execute, logger)
-    #socket.listen()
+    #ws = ServerWebsocket(IP , WEBSOCKET_PORT, execute, logger)
+    socket = ServerSocket(IP, SOCKET_PORT, execute, logger)
+    socket.listen()
     
     
 if __name__ == "__main__":

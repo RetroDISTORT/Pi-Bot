@@ -16,3 +16,7 @@ class ServoSet:
     def servoAngle(self, pin, value):
         self.servoSet.servo[pin].angle = value
 
+
+    def getServoAngle(self, pin):
+        return self.servoSet.servo[pin].angle
+

@@ -6,7 +6,7 @@ class ServerSocket:
         self.execute    = executeMethod
         self.log        = loggerMethod
         self.headerSize = 10
-        self.ip         = ip
+        self.ip         = self.getIP(ip)
         self.port       = port
         self.socket     = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -14,6 +14,14 @@ class ServerSocket:
         self.socket.bind((self.ip, self.port))
         self.socket.listen(5)
         self.log(f'Listening for connections on {self.ip}:{self.port}')
+
+
+    def getIP(self, IP):
+        if (IP == ""):
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            IP = s.getsockname()[0]
+        return IP
 
         
     def send(self, socket,  message):

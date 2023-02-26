@@ -11,6 +11,8 @@ import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 
 from PIL import Image, ImageDraw, ImageFont
 
+SLEEP_DELAY = 200
+
 def get_fonts(fontName):
     fontXL = ImageFont.truetype(fontName, 18)
     fontL  = ImageFont.truetype(fontName, 16)
@@ -31,17 +33,19 @@ def get_apps(dir):
             nameIndex = appFolder.rindex('/')+1
             appList.append(appFolder[nameIndex:])
 
-    print(appList)
+    #print(appList)
     return appList
 
 def get_input():
     if GPIO.input(8) == 0:  # UP
+        time.sleep(.25)
         return "UP"
             
     if GPIO.input(25) == 0: # MID
         return "SELECT"
             
     if GPIO.input(7) == 0:  # DOWN
+        time.sleep(.25)
         return "DOWN"
 
     time.sleep(.05)
@@ -72,17 +76,23 @@ def printMessage(device, inputFont, message):
         device.show()
 
 def menu(directory, device, fonts, menu):
+    timeToSleep = SLEEP_DELAY
     done = False
     draw_menu(device, fonts, menu)
     
     while(not done):
-        
         input = ""
         while(input==""):
             input = get_input()
+            timeToSleep -= 1
+            if timeToSleep == 0:
+                timeToSleep = SLEEP_DELAY
+                device.fill(0)
+                device.show()
 
         if (input == "UP"):
             menu.insert(0, menu.pop())
+            
             draw_menu(device, fonts, menu)
 
         if (input == "SELECT"):

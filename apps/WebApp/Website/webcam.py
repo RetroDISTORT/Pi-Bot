@@ -1,5 +1,5 @@
 # python3 webcam.py
-
+import socket      # Required for getIP
 import argparse
 import asyncio
 import json
@@ -16,10 +16,18 @@ from aiortc.contrib.media import MediaPlayer, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 
 ROOT = os.path.dirname(__file__)
-
+IP = ""
 
 relay = None
 webcam = None
+
+
+def getIP(IP):
+    if (IP == ""):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        IP = s.getsockname()[0]
+    return IP
 
 
 def create_local_tracks(play_from, decode):
@@ -149,7 +157,7 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--host", default="10.0.0.17", help="Host for HTTP server (default: 0.0.0.0)"
+        "--host", default=getIP(IP), help="Host for HTTP server (default: 0.0.0.0)"
     )
     parser.add_argument(
         "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"

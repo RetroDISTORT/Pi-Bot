@@ -1,11 +1,12 @@
 import asyncio    # Used for websockets
 import websockets # Used for websockets
+import socket     # Required for sockets
 
 class ServerWebsocket:
     def __init__(self, ip, port, executeMethod, loggerMethod):
         self.execute = executeMethod
         self.log     = loggerMethod
-        self.ip      = ip
+        self.ip      = self.getIP(ip)
         self.port    = port
         startServer  = websockets.serve(self.listen, self.ip, self.port, reuse_port=True )
         
@@ -14,6 +15,13 @@ class ServerWebsocket:
         asyncio.get_event_loop().run_forever()
         
 
+    def getIP(self, IP):
+        if (IP == ""):
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            IP = s.getsockname()[0]
+        return IP
+        
 
     async def send(self, websocket, message):
         try:
