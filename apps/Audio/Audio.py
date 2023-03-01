@@ -10,6 +10,7 @@ import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 
 from PIL import Image, ImageDraw, ImageFont
 
+
 MIN_VOL  = 0
 MAX_VOL  = 90
 CHANGE   = 5
@@ -55,8 +56,8 @@ def set_volume(display, sound, fonts):
     display_volume(display, sound, fonts)
     
     while(not done):
+        time.sleep(.1)
         if GPIO.input(8) == 0:  # UP
-            time.sleep(.1)
             volume = sound.getvolume()
             if(volume[0] + CHANGE > MAX_VOL):
                 sound.setvolume(MAX_VOL)
@@ -65,13 +66,11 @@ def set_volume(display, sound, fonts):
             display_volume(display, sound, fonts)
             
         if GPIO.input(25) == 0: # MID
-            time.sleep(.1)
             display.fill(0)
             display.show()
             done = True
             
         if GPIO.input(7) == 0:  # DOWN
-            time.sleep(.1)
             volume = sound.getvolume()
             if(volume[0] - CHANGE < MIN_VOL):
                 sound.setvolume(MIN_VOL)
@@ -95,7 +94,7 @@ def main(directory):
     GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # DOWN       Order:
     GPIO.setup(8, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # UP      [U][C][D][O]
     GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_UP) # CENTER
-        
+    
     set_volume(oled, snd, fontList)
 
     
