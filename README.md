@@ -1,7 +1,8 @@
 # Pi Bot
 
 <p align=<p align="center">
-  <img width=30% height=30% src="images/AI.gif">
+  <img hspace="-30" width=30% height=30% src="images/AI.gif">
+  <img hspace="30" vspace="-20" width=55% height=55% src="images/webapp.gif">
 </p>
 
 This open source project is a robot for the [Raspberry pi](https://www.raspberrypi.com/) platform. Boobot or Pi Bot is mainly designed to be a hobbyist playground. This project was designed to contain basic components for a robot. 
