@@ -1,4 +1,9 @@
 # Pi Bot
+
+<p align=<p align="center">
+  <img width=30% height=30% src="images/AI.gif">
+</p>
+
 This open source project is a robot for the [Raspberry pi](https://www.raspberrypi.com/) platform. Boobot or Pi Bot is mainly designed to be a hobbyist playground. This project was designed to contain basic components for a robot. 
 
 Some of the potential uses for this robot are a bluetooth speaker, mini linux PC, server with UPS and status, machine learning project, AI assistant, Steam Link reciever, retro gaming console, media player, home automation, and much more! With the inclusion of the modular SPI port on the bottom, it can connect and control other devices like a smart automatic carpet vacuum! 
