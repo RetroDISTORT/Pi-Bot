@@ -1,8 +1,9 @@
-
 var pc = null;
-var cameraAngle = 100;
 let ws;
 
+let video        = document.getElementById("video");
+var videoWidth   = video.outerWidth;
+var videoHeight  = video.outerHeight;
 
 function send(data) {
     if (!ws){
@@ -23,7 +24,9 @@ function init() {
 	document.getElementById("sendButton").disabled = true;
     }
 
-    ws           = new WebSocket('ws://'+serverIP+':'+websocketPort);
+    //ws           = new WebSocket('ws://localhost:9000');
+    //ws           = new WebSocket('ws://192.168.43.214:9000');
+    ws           = new WebSocket('ws://10.0.0.17:9000');
     ws.onopen    = () => { document.getElementById("sendButton").disabled = false; };
     ws.onmessage = ({ data }) => showMessage(data);//showMessage(data);
     ws.onclose   = function() { ws = null; document.getElementById("sendButton").disabled = true;};
@@ -79,7 +82,6 @@ function startStream() {
     if (document.getElementById('use-stun').checked) {
         config.iceServers = [{urls: ['stun:stun.l.google.com:19302']}];
     }
-
 
     pc = new RTCPeerConnection(config);
 
@@ -276,25 +278,24 @@ class SliderController
     }
 }
 
-function update(){
+function update()
+{
     document.getElementById("joystick_x").innerText = "x: " + joystick.value.x;
     document.getElementById("joystick_y").innerText = "y: " + joystick.value.y;
     document.getElementById("slider_y").innerText   = "y: " + slider.value.y;
 
-    cameraAngle = Math.max(0, Math.min(180, cameraAngle - slider.value.y * 4 ));
-    servo1      = 100 + Math.max(-1, Math.min(1, joystick.value.y + joystick.value.x)) * 80;
-    servo2      = 100 - Math.max(-1, Math.min(1, joystick.value.y - joystick.value.x)) * 80;
-    servo3      = cameraAngle;
+    servo1 = 100 + Math.max(-1, Math.min(1, joystick.value.x + joystick.value.y)) * 80;
+    servo2 = 100 - Math.max(-1, Math.min(1, joystick.value.x + joystick.value.y)) * 80;
+    servo3 = "None";//Math.max(0, Math.min(180, slider.value.y)) * 80;
     
     message = {'device'           : "Servo",
 	       'command'          : "setAllServos",
-	       'leftServoAngle'   : servo1,
-	       'rightServoAngle'  : servo2,
-	       'cameraServoAngle' : servo3
+	       'leftServoAngle'   : String(servo1),
+	       'rightServoAngle'  : String(servo2),
+	       'cameraServoAngle' : String(servo3)
 	      }
-    
+    console.log(message)
     send(JSON.stringify(message));
-    resize();
 }
 
 function sendCommand(){
@@ -326,20 +327,17 @@ function resize(){
 	screenWidth / videoWidth
     );
 
-    video.style.transform = "translate(-50%, -50%) scale(" + scale + ") rotate(180deg)";
+    video.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
 }
 
 let joystick = new JoystickController("stick", 64, 4);
 let slider   = new SliderController("slider", 64, 4);
 
-//console.log(video)
-
-
-
 //Full screen
 //var elem = document.documentElement;
 //elem.requestFullscreen();
 
+console.log("hello")
 
 init();
 

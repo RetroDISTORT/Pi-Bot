@@ -1,136 +1,64 @@
 import os               # Required for running command line functions
-import glob             # Required for showing applicaitons
+import sys              # Required for loading special modules
 import time             # Required for delays
-import board            # Required for I2C bus
-import busio            # Required for I2C bus
-import random
-import digitalio        # Required for I2C bus
-import adafruit_ssd1306 # Required for OLED displays
+import socket           # required to get IP
+import configparser     # Required for ini files
 
-import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
+from signal import SIGKILL
 
-from PIL import Image, ImageDraw, ImageFont
 
-def get_fonts(fontName):
-    fontXL = ImageFont.truetype(fontName, 18)
-    fontL  = ImageFont.truetype(fontName, 16)
-    fontM  = ImageFont.truetype(fontName, 12)
-    fontS  = ImageFont.truetype(fontName, 10)
-    fontXS = ImageFont.truetype(fontName,  8)
+sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/display')
+from menu         import Menu
+
+sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/processes')
+from taskManager  import TaskManager    
+
+
+def mainMenu(menu):
+    taskManager = TaskManager()
     
-    return [fontXL, fontL, fontM, fontS, fontXS]
+    while True:
+        select = menu.displayMenu(['Stations', 'Volume', 'About', 'Exit'])
+        
+        if select == 'Stations':
+            stationsMenu(menu, taskManager)
+        if select == 'Volume':        
+            serverMenu(menu, taskManager)
+        if select == 'About':
+            menu.displayLargeMessage(["      Pi-Bot Radio", "--------------------------", "       V 0.23.3.8", " Github: RetroDISTORT", "", "      [Click to Exit]"])
+        if select == 'Exit':
+            menu.displayOff()
+            return
 
-def get_list(dir):
-    # list to store files
-    validExtensions = ('.pls', '.m3u')
-    optionList      = []
+
+def stationsMenu(menu, taskManager):
+    while True:
+        selectedStation = menu.displayMenu(['Off'] + getStations('/opt/boobot/apps/Radio/Stations/') + ['Back'])
+        if selectedStation != 'Back':
+            #taskManager.killApplication('Radio')
+            os.system("killall vlc")
+            if selectedStation != 'Off':
+                taskManager.startTask('Audio', 'Radio', "vlc /opt/boobot/apps/Radio/Stations/" + selectedStation)
+        else:
+            return
+
+
+def getStations(dir):
+    stationList = []
     
-    # Iterate directory
     for file in os.listdir(dir):
-        folder = os.path.join(dir, file)
-        # check only text files
-        if file.endswith(validExtensions):
-            optionList.append(file)
+        appFolder = os.path.join(dir, file)
+        nameIndex = appFolder.rindex('/')+1
+        stationList.append(appFolder[nameIndex:])
 
-    return optionList
+    return stationList
 
-def get_input():
-    if GPIO.input(8) == 0:  # UP
-        time.sleep(.1)
-        return "UP"
-            
-    if GPIO.input(25) == 0: # MID
-        time.sleep(.1)
-        return "SELECT"
-            
-    if GPIO.input(7) == 0:  # DOWN
-        time.sleep(.1)
-        return "DOWN"
-    
-    return "NONE"
-                
-def start_app(device, fonts, appDirectory):
-    try:
-        exec(open(appDirectory).read(), globals()) #Run application
-    except Exception as e:
-        device.contrast(1) # Max contrast is 255
-        printMessage(device, fonts[1], str(e))
-        
-    time.sleep(1)
 
-def printMessage(device, inputFont, message):
-    image = Image.new('1', (device.width, device.height))
-    draw  = ImageDraw.Draw(image)
-    speed = 10 # Larger is faster
-
-    (font_width, font_height) = inputFont.getsize(message)
+def main():
+    menu = Menu('/opt/boobot/apps/System/fonts/ratchet-clank-psp.ttf', 12)
     time.sleep(.5)
+    mainMenu(menu)
 
-    # Scroll error message
-    for pos_x in range(0,-font_width,-speed):
-        draw.rectangle((0, 10, device.width, device.height - 10), outline=0, fill=255)
-        draw.text((pos_x , 25), message, font = inputFont, fill = 0)
-        device.image(image)
-        device.show()
-
-def menu(directory, device, fonts, menu):
-    done = False
-    draw_menu(device, fonts, menu)
-    
-    while(not done):
-        
-        input = ""
-        while(input==""):
-            input = get_input()
-
-        if (input == "UP"):
-            menu.insert(0, menu.pop())
-            draw_menu(device, fonts, menu)
-
-        if (input == "SELECT"):
-            start_app(device, fonts, directory + menu[0] + "/" + menu[0] + ".py")
-            draw_menu(device, fonts, menu)
-
-        if (input == "DOWN"):
-            menu.append(menu.pop(0))
-            draw_menu(device, fonts, menu)
-
-def draw_menu(device, fonts, menu):
-    image = Image.new('1', (device.width, device.height))
-    draw = ImageDraw.Draw(image)
-    done = False
-    vshift = [21,37,51,1,10]#[1,10,21,37,51]
-    useFont  = [1,2,4,2]#[4,2,1,2,4]
-        
-    draw.rectangle((0, 25, device.width, 39), outline=0, fill=255)
-    for i in range(-2,3):
-        if len(menu) > abs(i):
-            draw.text((2 , vshift[i]), menu[i], font=fonts[useFont[i]],fill = 0 if i == 0 else 255)
-                
-    device.image(image)
-    device.show()
-        
-
-def main(directory):
-    WIDTH  = 128  # DISPLAY
-    HEIGHT = 64   # DISPLAY
-    BORDER = 5    # DISPLAY
-
-    i2c = busio.I2C(board.SCL, board.SDA)
-    oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
-    fontList = get_fonts('/opt/boobot/fonts/ratchet-clank-psp.ttf')
-    optionList = get_list(directory+'Stations/')
-    
-    oled.contrast(1) # Max contrast is 255
-
-    GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # DOWN       Order:
-    GPIO.setup(8, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # UP      [U][C][D][O]
-    GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_UP) # CENTER
-
-    menu(directory, oled, fontList, optionList)
-    
-    #exec(open('/home/retro/Documents/github/boobot/code/OLED_TEST_AI.py').read()) #Run OLED script
-    #os.system("pactl set-sink-volume 0 50%")
     
 if __name__ == "__main__":
-    main('/opt/boobot/apps/Radio/')
+    main()

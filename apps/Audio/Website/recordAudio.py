@@ -3,20 +3,14 @@ import pyaudio
 
 app = Flask(__name__)
 
-FORMAT = pyaudio.paInt32
-CHANNELS     = 2
-RATE         = 44100
-CHUNK        = 4048#2024#1024
-device_index = 0
-
-#FORMAT = pyaudio.paInt32
-##CHANNELS = 1
-#RATE = 44100
-#CHUNK = 8192 #4096 #32768 #1024 #512
-#device_index = 0
+FORMAT        = pyaudio.paInt32
+CHANNELS      = 2
+RATE          = 44100
+CHUNK         = 4096 #8192 #4096 #32768 #1024 #512
+DEVICE        = 0
 bitsPerSample = 32
 
-audio1 = pyaudio.PyAudio()
+audioIn       = pyaudio.PyAudio()
 
 def genHeader(sampleRate, bitsPerSample, channels):
     datasize = 2000*10**6
@@ -38,28 +32,16 @@ def genHeader(sampleRate, bitsPerSample, channels):
 wav_header = genHeader(RATE, bitsPerSample, CHANNELS)
 
 
-# start Recording
-#stream = audio.open(format=FORMAT, channels=CHANNELS,
-#                    rate=RATE, input=True, input_device_index = 0,
-#                    frames_per_buffer=CHUNK)
-
 @app.route('/audio')
 def audio():
     # start Recording
     def sound():
-
-        #CHUNK = 1024
-        #sampleRate = 44100
-        #bitsPerSample = 16
-        #channels = 2
-        bitsPerSample = 32
-        #CHUNK = #2048#1024
-        
         wav_header = genHeader(RATE, bitsPerSample, CHANNELS)
+
+        stream  = audioIn.open(format=FORMAT, channels=CHANNELS, rate=RATE,
+                               input=True, input_device_index=DEVICE,
+                               frames_per_buffer=CHUNK)
         
-        stream = audio1.open(format=FORMAT, channels=CHANNELS,
-                             rate=RATE, input=True, input_device_index=device_index,
-                             frames_per_buffer=CHUNK)
         print("recording...")
         #frames = []
         first_run = True

@@ -1,3 +1,6 @@
+# checkout https://github.com/sonkm3/aiortc-example/tree/main/examples/raspberrypicamera
+
+
 # python3 webcam.py
 
 import argparse
@@ -8,6 +11,7 @@ import os
 import platform
 import ssl
 import av
+import configparser     # Required for ini files
 
 from aiohttp import web
 
@@ -15,11 +19,19 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 
-ROOT = os.path.dirname(__file__)
+## I ADDED THIS
+import sys              # Required for loading special modules
 
+sys.path.insert(1, '/home/pi/Documents/boobot/apps/WebApp/Website/')
+from systemMic     import SystemMic
+## END
 
 relay = None
 webcam = None
+
+
+def getIP(IP):
+    return IP if IP != "" else os.popen("hostname -I").read().split()[0]
 
 
 def create_local_tracks(play_from, decode):
@@ -47,17 +59,22 @@ def create_local_tracks(play_from, decode):
                 )
             else:
                 # cannot setup the audio format pcm_s32le 
-                webcam_video = MediaPlayer("/dev/video0", format="v4l2", options=video_options).video
-                print("vvvvvvvvvvv")
-                print(RTCRtpSender.getCapabilities("audio").codecs)
+                #webcam_video = MediaPlayer("/dev/video0", format="v4l2", options=video_options).video
+                webcam = MediaPlayer("/dev/video0", format="v4l2", options=video_options)
+                #print("vvvvvvvvvvv")
+                #print(RTCRtpSender.getCapabilities("audio").codecs)
                 #webcam_audio = MediaPlayer("dmic_sv", format="alsa", options=audio_options).audio 
                 #webcam_audio = MediaPlayer("default", format="alsa").audio
                 #webcam_audio = MediaPlayer("sysdefault:CARD=sndrpii2scard", format="alsa", options=audio_options).audio
                 #webcam_audio = MediaPlayer("sysdefault:CARD=sndrpii2scard", format="alsa", options={'sample_rate':'12000'})
                 #webcam = MediaPlayer("/dev/video0", format="h264", options=options)
+                sysMic = SystemMic()
+                #mic    = sysMic      # Returns a MediaStreamTrack
+                
             relay = MediaRelay()
         #return relay.subscribe(webcam_audio), relay.subscribe(webcam_video)
-        return None, relay.subscribe(webcam_video)
+        return sysMic, relay.subscribe(webcam.video)
+        #return None, relay.subscribe(webcam.video)
 
 
 def force_codec(pc, sender, forced_codec):
@@ -68,15 +85,29 @@ def force_codec(pc, sender, forced_codec):
         [codec for codec in codecs if codec.mimeType == forced_codec]
     )
 
-
+def serverInfo(ip, portws):
+    content = ("\nlet serverIP      = \"" + ip     + "\";" +
+               "\nlet websocketPort = "   + portws + ";"   +
+               "\n"
+               )
+    return content
+    
 async def index(request):
-    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    content = open("/opt/boobot/apps/WebApp/Website/templates/index.html", "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
 async def javascript(request):
-    content = open(os.path.join(ROOT, "client.js"), "r").read()
-    return web.Response(content_type="application/javascript", text=content)
+    fileName   = '/opt/boobot/apps/WebApp/server.config'
+    config     = configparser.ConfigParser()
+    loadConfig(config, fileName)
+    
+    ip         = getIP("")
+    portws     = config['Websocket']['Port']
+    info = serverInfo(ip, portws)
+    
+    content = open("/opt/boobot/apps/WebApp/Website/static/scripts/client.js", "r").read()
+    return web.Response(content_type="application/javascript", text=info + content)
 
 
 async def offer(request):
@@ -99,9 +130,6 @@ async def offer(request):
         )
 
     if audio:
-        print("VVVVV")
-        print(await audio.recv())
-        print("^^^^^")
         audio_sender = pc.addTrack(audio)
         if args.audio_codec:
             force_codec(pc, audio_sender, args.audio_codec)
@@ -138,7 +166,20 @@ async def on_shutdown(app):
     pcs.clear()
 
 
+def loadConfig(configuration, fileName):
+    configuration.read(fileName)
+    return
+
+    
 if __name__ == "__main__":
+    fileName   = '/opt/boobot/apps/WebApp/server.config'
+    config     = configparser.ConfigParser()
+    loadConfig(config, fileName)
+    ip         = getIP("")
+    port       = config['Website']['Port']
+    #os.chdir("/opt/boobot/apps/WebApp/Website/")
+    #print(os.getcwd())
+    
     parser = argparse.ArgumentParser(description="WebRTC webcam demo")
     parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
     parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
@@ -152,10 +193,10 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--host", default="0.0.0.0", help="Host for HTTP server (default: 0.0.0.0)"
+        "--host", default=ip, help="Host for HTTP server (default: 0.0.0.0)"
     )
     parser.add_argument(
-        "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
+        "--port", type=int, default=port, help="Port for HTTP server (default: 8080)"
     )
     parser.add_argument("--verbose", "-v", action="count")
     parser.add_argument(
@@ -183,4 +224,5 @@ if __name__ == "__main__":
     app.router.add_get("/", index)
     app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)
+    app.router.add_static("/static/", path=str("/opt/boobot/apps/WebApp/Website/static/"))
     web.run_app(app, host=args.host, port=args.port, ssl_context=ssl_context)

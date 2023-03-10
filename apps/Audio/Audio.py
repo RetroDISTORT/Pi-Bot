@@ -87,7 +87,7 @@ def main(directory):
     oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
     snd = alsaaudio.Mixer()
 
-    fontList = get_fonts('/opt/boobot/fonts/ratchet-clank-psp.ttf')
+    fontList = get_fonts('/opt/boobot/apps/System/fonts/ratchet-clank-psp.ttf')
     
     oled.contrast(1) # Max contrast is 255
     

@@ -13,6 +13,8 @@ import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 from PIL import Image, ImageDraw, ImageFont
 
 
+import av
+
 def get_input():
     if GPIO.input(8) == 0:  # UP
         return "UP"
@@ -52,7 +54,7 @@ def main(directory):
     FORMAT = pyaudio.paInt32
     CHANNELS     = 2
     RATE         = 44100
-    CHUNK        = 2024#1024
+    CHUNK        = 4096#2048#1024
     device_index = 0
 
     #DISPLAY
@@ -78,20 +80,36 @@ def main(directory):
     GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # CENTER
 
     input = ""
+
+    sampleCount = 0
     
     while(input != "SELECT"):
-        data  = np.fromstring(stream.read(CHUNK),dtype=np.int16)
+        data  = np.fromstring(stream.read(CHUNK),dtype=np.int32)/2
+        data  = np.array([data.astype('int16')])
         #dataL = data[0::2]
-        dataR = data[1::2]
-        #peakL = np.abs(np.max(dataL)-np.min(dataL))/16#/maxValue
-        peakR = np.abs(np.max(dataR)-np.min(dataR))
-        volHist.append(peakR)
-        volHist.pop(0)
-        draw.rectangle((0, 0, oled.width, oled.height), outline=0, fill=0)
-        graph_array(draw, volHist)
-        oled.image(image)
-        oled.show()
-        input = get_input()
+        #dataR = data[1::2]
+
+        # #peakL = np.abs(np.max(dataL)-np.min(dataL))/16#/maxValue
+        # peakR = np.abs(np.max(dataR)-np.min(dataR))
+        # volHist.append(peakR)
+        # volHist.pop(0)
+        # draw.rectangle((0, 0, oled.width, oled.height), outline=0, fill=0)
+        # graph_array(draw, volHist)
+        # oled.image(image)
+        # oled.show()
+        # #input = get_input()
+
+        #dataLR       = np.vstack((dataL, dataR))
+        dataZ   = np.zeros((1, 2048), dtype=np.int16) 
+        
+        print(dataZ)
+        print(data)
+        
+        frame        = av.AudioFrame.from_ndarray(data, 's16', layout='mono')#, layout=self.LAYOUT)
+        frame.pts    = sampleCount
+        frame.rate   = 44100
+        sampleCount += frame.samples 
+        print(frame)
     
 if __name__ == "__main__":
     main('/opt/boobot/')

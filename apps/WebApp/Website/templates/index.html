@@ -22,9 +22,9 @@
       </div>
     
       <div id="media" class="screen">
-	<img id="video" class="video" src="static/images/stream.jpg"/>
-	<!-- <audio id="audio" autoplay="true"></audio> -->
-	<!-- <video id="video" autoplay="true" playsinline="true"></video> -->
+	<!-- <img id="video" class="video" src="static/images/stream.jpg"/> -->
+	<audio id="audio" autoplay="true"></audio>
+	<video id="video" class="video" autoplay="true" playsinline="true"></video>
       </div>
     
 
@@ -36,12 +36,12 @@
 	<p id="slider_y"> Y: 0</p>
 	
 
-	<div class="option" style="position:fixed; bottom:20%">
+	<div class="option" style="position:fixed; bottom:80%">
 	  <input id="use-stun" type="checkbox"/>
 	  <label for="use-stun">Use STUN server</label>
 	</div>
 	<button id="startStreamButton" onclick="startStream()">Start</button>
-	<button id="stopStreamButton" style="display: none" onclick="stop()">Stop</button>
+	<button id="stopStreamButton" style="display: none" onclick="stopStream()">Stop</button>
 	
       </div>
       
@@ -58,7 +58,7 @@
 
     </div>
     
-    <script src="/static/scripts/client.js"></script>
+    <script src="/client.js"></script>
     
   </body>
 </html>

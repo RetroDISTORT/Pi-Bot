@@ -1,276 +1,236 @@
-import time
-import sys
-import errno
-import socket
-import signal      # Required for handler
-import pickle      # Required to convert objects to raw data
-import select
+import os               # Required for running command line functions
+import time             # Required for delays
+import sys              # Required for loading special modules
+import configparser     # Required for ini files
 
-from math import ceil as ceil
-from threading import Thread, Event, Lock
+#sys.path.insert(1, '/opt/boobot/apps/System/components/server')
+sys.path.insert(1, '/home/pi/Documents/boobot/apps/System/components/virtual/display')
+from menu     import Menu
 
-sys.path.insert(1,'/opt/boobot/apps/Server/src/client')
-from clientSocket import ClientSocket
+sys.path.insert(1, '/home/pi/Documents/boobot/apps/System/components/virtual/processes')
+from taskManager     import TaskManager
 
-PIXELS          = 16
-DELAY           = .0167        # .0167 is about 60fps
-CONFIRMATION    = True         # This helps prevent overloading the server
-HEADERSIZE      = 10
-IP              = ""          # socket.gethostname()
-PORT            = 9000
-TIMEOUT_SECONDS = 10
-EXIT_SIG        = 1
-BRIGHTNESS      = .2
-
-# REQUIRED FOR THREADS
-messageLock      = Lock()
-newMessageEvent  = Event()
-newMessageEvent.clear()
+# glow cycle(4):  stepStart colorSpeed glowSpeed brightness
+# pixel cycle(5): stepStart colorSpeed glowSpeed pixelSpeed brightness
+# VU(5):          stepStart colorSpeed subColorSpeed decay reset
+# 3 Point VU(6):  stepStart colorSpeed subColor subColorSpeed decay reset
 
 
-def handler(signum, frame):
-    global EXIT_SIG
+stepStart     = "0"
+colorSpeed    = "4"
+glowSpeed     = "3"
+pixelSpeed    = ".1"
+brightness    = "3"
+subColor      = "0"
+subColorSpeed = "50"
+decay         = ".80" # VU meter peak decay
+reset         = "4000" # Steps until VU meter max peak reset
+
+
+def mainMenu(menu):
+    profilesFile   = '/opt/boobot/apps/RGB/settings/profiles.config'
+    serverFile     = '/opt/boobot/apps/RGB/settings/server.config'
+    profilesConfig = configparser.ConfigParser()
+    serverConfig   = configparser.ConfigParser()
+    taskManager    = TaskManager()
+    loadConfig(profilesConfig, profilesFile)
+    loadConfig(serverConfig,   serverFile)
     
-    if EXIT_SIG == 1: # Force shutdown
-        exit()
+    while True:
+        select = menu.displayMenu(['Modes', 'Settings', 'Connection', 'About', 'Exit'])
+        
+        if select == 'Modes':
+            modeMenu(menu, profilesConfig, getIP(), serverConfig['Socket']['Port'])
+        if select == 'Settings':
+            settingsMenu(menu, profilesConfig, profilesFile)
+        if select == 'Connection':
+            connectionMenu(menu, serverConfig, taskManager)
+        if select == 'About':
+            menu.displayLargeMessage(["      Pi-Bot Server", "--------------------------", "       V 0.23.2.26", " Github: RetroDISTORT", "", "      [Click to Exit]"])
+        if select == 'Exit':
+            menu.displayOff()
+            return
+
+
+def connectionMenu(menu, serverConfig, taskManager):
+    while True:
+        menuOptions = ['Start Server'] if len(taskManager.listType('Server')) == 0 else ['Kill Server']
+        select = menu.displayMenu(menuOptions + ['Info', 'Back'])
+
+        if select == 'Start Server':
+            taskManager.startTask('Server', 'RGB', "sudo python3 /opt/boobot/apps/System/programs/Server.py")
+        if select == 'Kill Server':
+            taskManager.killType('Server')
+        if select == 'Info':
+            menu.displayLargeMessage(["   Server Connection", "IP:"+getIP(), "Port(P):"+serverConfig['Website']['Port'], "Port(S):"+serverConfig['Socket']['Port'], "Port(WS):"+serverConfig['Websocket']['Port'], "      [Click to Exit]"])
+        if select == 'Back':
+            menu.displayOff()
+            return        
+
+        
+def settingsMenu(menu, configuration, fileName):
+    while True:
+        select = menu.displayMenu(['Reset All', 'Exit'])
+        if select == 'Reset All':
+            createConfig(configuration)
+            saveConfig(configuration, fileName)
+            
+        if select == 'Exit':
+            menu.displayOff()
+            return
+
+        
+def modeMenu(menu, config, taskManager, ip, port):
+    if len(taskManager.listType('Server')) == 0:
+        menu.displayMessage("Server is off")
+        return
     
-    EXIT_SIG = 0
-    print("Terminating program...", flush=True)
+    select = menu.displayMenu(['Off', 'Glow Cycle', 'Pixel Cycle', 'Rainbow Cycle', 'VU', 'VU Stereo', '3 Point VU', 'Spectrum', 'Glow VU', 'Exit'])
+    if select != 'Exit':
+        taskManager.killType('LED')
+
+
+    if select == 'Off':
+        taskManager.startTask('LED', 'RGB', "python3 /opt/boobot/apps/System/components/virtual/leds/off.py ")
+        menu.displayMessage("Close once LEDs are off...")
+        taskManager.killType('LED')
+        
+        
+    if select == 'Glow Cycle':
+        taskManager.startTask('LED', 'RGB', "python3 /opt/boobot/apps/System/components/virtual/leds/colorGlowCycle.py " +
+                              ip    + " " +
+                              port  + " " +
+                              config['GlowCycle:Default']['stepStart']  + " " +
+                              config['GlowCycle:Default']['colorSpeed'] + " " +
+                              config['GlowCycle:Default']['glowSpeed']  + " " +
+                              config['GlowCycle:Default']['brightness'] )
+
+    if select == 'Pixel Cycle':
+        taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/pixelCycle.py " +
+                              ip    + " " +
+                              port  + " " +
+                              config['PixelCycle:Default']['stepStart']  + " " +
+                              config['PixelCycle:Default']['colorSpeed'] + " " +
+                              config['PixelCycle:Default']['glowSpeed']  + " " +
+                              config['PixelCycle:Default']['pixelSpeed'] + " " +
+                              config['PixelCycle:Default']['brightness'] )
+        
+    if select == 'Rainbow Cycle':
+        taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/rainbowCycle.py " +
+                              ip    + " " +
+                              port  + " " +
+                              colorSpeed )
+        
+    if select == 'VU':
+        taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/VU.py " +
+                              ip    + " " +
+                              port  + " " +
+                              config['VU:Default']['stepStart']      + " " +
+                              config['VU:Default']['colorSpeed']     + " " +
+                              config['VU:Default']['subColorSpeed']  + " " +
+                              config['VU:Default']['decay']          + " " +
+                              config['VU:Default']['reset'])
+
+    if select == 'VU Stereo':
+        taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/VUStereo.py " +
+                              ip    + " " +
+                              port  + " " +
+                              config['VU:Default']['stepStart']      + " " +
+                              config['VU:Default']['colorSpeed']     + " " +
+                              config['VU:Default']['subColorSpeed']  + " " +
+                              config['VU:Default']['decay']          + " " +
+                              config['VU:Default']['reset'])
+        
+    if select == 'Glow VU':
+        pass
     
+    if select == 'Spectrum':
+        taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/spectrum.py " +
+                              ip    + " " +
+                              port  + " " +
+                              config['Spectrum:Default']['stepStart']      + " " +
+                              config['Spectrum:Default']['colorSpeed']     + " " +
+                              config['Spectrum:Default']['subColor']       + " " +
+                              config['Spectrum:Default']['subColorSpeed']  + " " +
+                              config['Spectrum:Default']['decay']          + " " +
+                              config['Spectrum:Default']['reset'])
+        
+    if select == '3 Point VU':
+        taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/3PointVU.py " +
+                              ip    + " " +
+                              port  + " " +
+                              config['3PointVU:Default']['stepStart']      + " " +
+                              config['3PointVU:Default']['colorSpeed']     + " " +
+                              config['3PointVU:Default']['subColor']       + " " +
+                              config['3PointVU:Default']['subColorSpeed']  + " " +
+                              config['3PointVU:Default']['decay']          + " " +
+                              config['3PointVU:Default']['reset'])
+
+        
+    if select == 'Exit':
+        pass
+    return
+
+
+def createConfig(configuration):
+    configuration['GlowCycle:Default']  = { 'stepStart'    : "0",
+                                            'colorSpeed'   : "4",
+                                            'glowSpeed'    : "2",
+                                            'brightness'   : "100",
+                                           }                
+    
+    configuration['PixelCycle:Default'] = {'stepStart'     : '0',
+                                           'colorSpeed'    : '1',
+                                           'glowSpeed'     : '0',
+                                           'pixelSpeed'    : '-.2',
+                                           'brightness'    : '5',
+                                           }
+    
+    configuration['VU:Default']         = {'stepStart'     : "0",
+                                           'colorSpeed'    : "-2",
+                                           'subColorSpeed' : "17.4",
+                                           'decay'         : ".65",
+                                           'reset'         : "4000",
+                                           }
+    
+    configuration['Spectrum:Default']   = {'stepStart'     : "0",
+                                           'colorSpeed'    : "4",
+                                           'subColor'      : "0",
+                                           'subColorSpeed' : "50",
+                                           'decay'         : ".8",
+                                           'reset'         : "4000",
+                                           }
+    
+    configuration['3PointVU:Default']   = {'stepStart'     : "0",
+                                           'colorSpeed'    : "4",
+                                           'subColor'      : "0",
+                                           'subColorSpeed' : "50",
+                                           'decay'         : ".8",
+                                           'reset'         : "4000",
+                                           }
+    return
+
+
+def saveConfig(configuration, fileName):
+    with open(fileName, 'w') as configfile:
+        configuration.write(configfile)
+    return
+
+
+def loadConfig(configuration, fileName):
+    configuration.read(fileName)
+    return
+
 
 def getIP():
-    global IP;
-    if (IP == ""):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        IP = s.getsockname()[0]
-
-##################
-# SERVER METHODS ########################################################################################################
-##################
-            
-def sendToServer(message, pixelColors):
-    with messageLock:
-        message.clear()
-        message += pixelColors[:]
-        newMessageEvent.set()
-
-        
-def ClientManager(message):
-    socket = ClientSocket(IP,PORT)
-    
-    while EXIT_SIG:
-        newMessageEvent.wait()
-        with messageLock:
-            messageCopy = message[:]
-            message.clear()
-            newMessageEvent.clear()
-
-        pixelData = [list(pixel) for pixel in messageCopy]
-        jsonMessage = ('{"device":  "LED",'
-                       '"command": "setPixels",'
-                       '"colors":' + str(pixelData) +
-                       '}')
-        socket.send(jsonMessage)
-        socket.recieve()        
-        
-###########################
-# RGB PIXEL COLOR CONTROL ###############################################################################################
-###########################
-    
-def checkStep(step):
-    if step > 765:             # RESET TO A STATE IN RANGE
-        step = step - 765
-    if 0 > step:
-        step = 765 + step
-        
-    return step
-
-def rainbow(step):
-    step = checkStep(step)
-    
-    if step<255:               # From 0 - 255
-        R=255-step
-        G=step
-        B=0
-    else:
-        if step<510:           # From 255 - 510
-            R=0
-            G=510-step
-            B=step-255
-        else:                  # From 510 - 765
-            R=step-510
-            G=0
-            B=765-step      
-            
-    return (int(R),int(G),int(B)), step
+    return os.popen("hostname -I").read().split()[0]
 
 
-def MapValue(value, fromMinimum, fromMaximum, toMinimum, toMaximum):
-    if value==fromMaximum:
-        return toMaximum #Rounding in the last line may cause it to return a greater value
-    if value==fromMinimum:
-        return toMinimum
-    
-    inMax    = abs(fromMinimum-fromMaximum)
-    outMax   = abs(toMinimum-toMaximum)
-    newValue = value - fromMinimum 
-
-    return 0 if inMax==0 else (newValue*outMax/inMax)+toMinimum
-
-
-def pixelBrightness(pixel, percentage):
-    #Assuming the current color is max value
-    dimmedColors =[]
-    for maxColor in range(len(pixel)):
-        dimmedColor = int(MapValue(percentage, 0, 100, 0, pixel[maxColor]))
-        dimmedColors.append(dimmedColor)
-            
-    return tuple(dimmedColors)
-
-
-def dimPixels(pixelColors, dim):
-    for pixel in range(len(pixelColors)):
-        dimmedColors = []
-        
-        for color in range(len(pixelColors[pixel])):
-            dimmedColors.append(int(pixelColors[pixel][color]-dim if pixelColors[pixel][color]-dim>0 else 0))
-            
-        pixelColors[pixel] = tuple(dimmedColors)
-
-    return pixelColors
-
-
-def guage(value, pixelStep, colorSpeed, minValue, maxValue):
-    pixelColors         = [(0,0,0)]*PIXELS
-    lastColor           = [(0,0,0)]
-    pixelsOn            = MapValue(value, minValue, maxValue, 0, PIXELS)
-    lastPixelBrightness = (pixelsOn-int(pixelsOn))*100
-
-    for pixel in range(ceil(pixelsOn)):
-        pixelColors[pixel], pixelStep = rainbow(pixelStep)
-        pixelStep   += colorSpeed
-
-    if lastPixelBrightness != 0:
-        pixelColors[ceil(pixelsOn)-1] = pixelBrightness(pixelColors[ceil(pixelsOn)-1], lastPixelBrightness)
-            
-    return pixelColors, pixelStep
-
-    
-def pixelCycle(message, step, colorSpeed, pixelPos, pixelSpeed, dim):
-    pixelCount   = 16
-    pixelStep    = step
-    pixelColors  = [(0,0,0)]*pixelCount
-    #pixelStep   = [(i*765/pixelCount) for i in range(pixelCount)]
-
-    global EXIT_SIG
-    
-    while EXIT_SIG:
-        
-        time.sleep(DELAY)
-        pixelStep += colorSpeed
-        pixelPos  += pixelSpeed
-        
-        if pixelPos>=pixelCount:
-            pixelPos = pixelPos%pixelCount;
-        if pixelPos<0:
-            pixelPos = pixelPos%pixelCount;
-        
-        pixelColors = dimPixels(pixelColors, dim)
-        
-        pixelColors[int(pixelPos)], pixelStep = rainbow(pixelStep)
-        sendToServer(message, pixelColors)
-            
-def rainbowCycle(message, speed):
-    pixelCount  = 16;
-    pixelColors = [(0,0,0)]*pixelCount
-    #pixelStep  = [0]*pixelCount
-    pixelStep   = [(i*765/pixelCount) for i in range(pixelCount)]
-
-    global EXIT_SIG
-    
-    while EXIT_SIG:
-        time.sleep(DELAY)
-        sendToServer(message, pixelColors)
-        for i in range(pixelCount):
-            pixelStep[i] += speed
-            pixelColors[i], pixelStep[i] = rainbow(pixelStep[i])
-
-def colorGlowCycle(message, pixelStep, speed, brightnessChange, brightness):
-    pixelCount       = 16;
-    pixelColors      = [(0,0,0)]
-
-    global EXIT_SIG
-
-    while EXIT_SIG:
-        time.sleep(DELAY)
-        sendToServer(message, pixelColors)
-        
-        brightness += brightnessChange;
-        if not (0 <= brightness and brightness <= 100):
-            brightnessChange = -brightnessChange
-            brightness = 0 if brightness < 0 else 100
-
-        pixelStep += speed
-        pixelColors[0], pixelStep = rainbow(pixelStep)
-        pixelColors[0] = pixelBrightness(pixelColors[0], brightness)
-
-        
-def pixelGuage(message, pixelStep, colorSpeed, subColorSpeed):
-    pixelCount   = 16;
-
-    global EXIT_SIG
-    
-    while EXIT_SIG:
-        for value in range(301):
-            pixelStep = checkStep(pixelStep)
-            pixelColors, _ = guage(value, pixelStep, subColorSpeed, 0, 300)
-            sendToServer(message, pixelColors)
-            time.sleep(DELAY)
-
-            pixelStep-=colorSpeed
-            
-            if not EXIT_SIG:
-                return
-            
-        for value in range(300,-1,-1):
-            pixelStep = checkStep(pixelStep)
-            pixelColors, _ = guage(value, pixelStep, subColorSpeed, 0, 300)
-            sendToServer(message, pixelColors)
-            time.sleep(DELAY)
-
-            pixelStep-=colorSpeed
-            
-            if not EXIT_SIG:
-                return
-        
 def main():
-    message    = []
-    signal.signal(signal.SIGINT, handler)
-    
-    clientThread = Thread(target=ClientManager, args=(message, ))
-    clientThread.start()
-    
-    #rainbowCycle(message, -3)          # socket, colorSpeed
+    menu = Menu('/opt/boobot/apps/System/fonts/ratchet-clank-psp.ttf', 12)
+    time.sleep(.5)
+    mainMenu(menu)
 
-    #colorGlowCycle(message, 255, 0,  .1,   3) # socket, stepStart, colorSpeed,  glowSpeed, brightness
-    #colorGlowCycle(message,  0, 0,  0,   3) 
-    #colorGlowCycle(message,  0, 0,  2, 100) 
-    #colorGlowCycle(message,  0, 4,  2, 100) 
-
-    #pixelCycle(message, 255, 0, 8,  0, 5)      # socket, stepStart, colorSpeed, pixelPos, pixelSpeed, dim
-    #pixelCycle(message, 0, 1,  0, 1, 100)   
-    #pixelCycle(message, 0, 4,  0, .2, 0)      
-    #pixelCycle(message, 0, 0,  0, .2, 5)   
-    #pixelCycle(message, 0, 1,  0,-.2, 5)   
-    
-    #pixelGuage(message, 0,  0, 0)      # stepStart, colorSpeed, subColorSpeed
-    #pixelGuage(message, 0,  0, 17.4)   
-    #pixelGuage(message, 0,  2,  0)     
-    #pixelGuage(message, 5, 10, -50)     
-    
-    pixelColors = [(0,0,0)]*PIXELS
-    sendToServer(message, pixelColors)
     
 if __name__ == "__main__":
     main()
