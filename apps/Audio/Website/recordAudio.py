@@ -6,9 +6,11 @@ app = Flask(__name__)
 FORMAT        = pyaudio.paInt32
 CHANNELS      = 2
 RATE          = 44100
-CHUNK         = 4096 #8192 #4096 #32768 #1024 #512
-DEVICE        = 0
+AUDIO_PTIME   = 0.020        # 20ms audio packetization
+CHUNK         = int(RATE*AUDIO_PTIME)
+INDEX         = 0
 bitsPerSample = 32
+#CHUNK         = 4096 #8192 #4096 #32768 #1024 #512
 
 audioIn       = pyaudio.PyAudio()
 
@@ -39,8 +41,8 @@ def audio():
         wav_header = genHeader(RATE, bitsPerSample, CHANNELS)
 
         stream  = audioIn.open(format=FORMAT, channels=CHANNELS, rate=RATE,
-                               input=True, input_device_index=DEVICE,
-                               frames_per_buffer=CHUNK)
+                             input=True, input_device_index=INDEX,
+                             frames_per_buffer=CHUNK)
         
         print("recording...")
         #frames = []
@@ -62,4 +64,4 @@ def index():
             
             
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=True, threaded=True,port=5000)
+    app.run(host='0.0.0.0', debug=True, threaded=True,port=8000)

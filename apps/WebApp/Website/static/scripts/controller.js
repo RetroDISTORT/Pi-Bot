@@ -1,30 +1,4 @@
-let ws;
-
-function send(data) {
-    if (!ws){
-	//showMessage("No Websocket connection")
-	console.log("No Websocket connection")
-	return;
-    }
-
-    if (ws.readyState)
-	ws.send(data);
-}
-
-function init() {
-    if (ws) {
-	ws.onerror = ws.onopen = ws.onclose = null;
-	ws.close();
-	document.getElementById("sendButton").disabled = true;
-    }
-
-    //ws           = new WebSocket('ws://localhost:9000');
-    ws           = new WebSocket('ws://10.0.0.17:9000');
-    ws.onopen    = () => { document.getElementById("sendButton").disabled = false; };
-    ws.onmessage = ({ data }) => showMessage(data);//showMessage(data);
-    ws.onclose   = function() { ws = null; document.getElementById("sendButton").disabled = true;};
-}
-
+var cameraAngle = 100;
 
 class JoystickController
 {
@@ -190,32 +164,39 @@ class SliderController
 	document.addEventListener('touchmove',  handleMove, {passive: false});
 	document.addEventListener('mouseup',    handleUp);
 	document.addEventListener('touchend',   handleUp);
-	//update();
     }
 }
 
-
-let joystick = new JoystickController("stick", 64, 8);
-let slider   = new SliderController("slider", 64, 8);
-
-function update()
-{
+function update(){
     document.getElementById("joystick_x").innerText = "x: " + joystick.value.x;
     document.getElementById("joystick_y").innerText = "y: " + joystick.value.y;
     document.getElementById("slider_y").innerText   = "y: " + slider.value.y;
-    message = {'joystick_x' : String(joystick.value.x),
-	       'joystick_y' : String(joystick.value.y),
-	       'slider_y'   : String(slider.value.y)
+    resize();
+}
+
+
+function controlsJSON(){
+    cameraAngle = Math.max(0, Math.min(180, cameraAngle - slider.value.y * 4 ));
+    servo1      = 100 + Math.max(-1, Math.min(1, joystick.value.y + joystick.value.x)) * 80;
+    servo2      = 100 - Math.max(-1, Math.min(1, joystick.value.y - joystick.value.x)) * 80;
+    servo3      = cameraAngle;
+    
+    message = {'device'           : "Servo",
+	       'command'          : "setAllServos",
+	       'leftServoAngle'   : servo1,
+	       'rightServoAngle'  : servo2,
+	       'cameraServoAngle' : servo3
 	      }
     
-    send(JSON.stringify(message));
+    return(JSON.stringify(message));
 }
+
 
 function sendCommand(){
     command       = document.getElementById("commandInput");
     message       = {'message' : command.value}
     command.value = "";
-    send(JSON.stringify(message));
+    sendToServer(JSON.stringify(message));
 }
 
 function showMessage(message) {
@@ -225,6 +206,27 @@ function showMessage(message) {
     commandHistory.value = '';
 }
 
-init();
 
-var t=setInterval(update,40);
+function resize(){
+    let screen = document.getElementById("media");
+    let video        = document.getElementById("video");
+    var videoWidth   = video.clientWidth;
+    var videoHeight  = video.clientHeight;
+    
+    screenWidth  = screen.offsetWidth;
+    screenHeight = screen.offsetHeight;
+    
+    scale = Math.min(
+	screenHeight / videoHeight,
+	screenWidth / videoWidth
+    );
+
+    video.style.transform = "translate(-50%, -50%) scale(" + scale + ") rotate(180deg)";
+}
+
+let joystick = new JoystickController("stick", 64, 4);
+let slider   = new SliderController("slider", 64, 4);
+
+/*init();*/
+
+var t=setInterval(update, 40);

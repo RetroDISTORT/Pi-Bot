@@ -19,7 +19,6 @@ def mainMenu(menu):
     
     while True:
         select = menu.displayMenu(['Launcher', 'Settings', 'Connection', 'About', 'Exit'])
-        
         if select == 'Launcher':
             #menu.displayMessage("This still not available.")
             launcher(menu, taskManager, config)
@@ -97,40 +96,44 @@ def getIP():
 
 def launcher(menu, taskManager, configuration):
     while True:
-        server       = taskManager.listType('Server')
-        website      = taskManager.listType('Website')
-        menuOptions  = ['Start WebApp']         if len(website) == 0 else ['Kill WebApp']
-        menuOptions += ['Start Server', 'Done'] if len(server)  == 0 else ['Kill Server', 'Done']
+        WSServer     = len(taskManager.listType('WebSocketServer')) >= 1
+        website      = len(taskManager.listType('Website')) >= 1
+        menuOptions  = ['Kill WebApp']            if website  else ['Start WebApp']
+        menuOptions += ['Kill WS Server', 'Done'] if WSServer else ['Start WS Server', 'Done'] 
         
         select = menu.displayMenu(menuOptions)
 
         if select == 'Start WebApp':
-            startWebApp(menu, taskManager, configuration, server)
+            startWebApp(menu, taskManager, configuration, WSServer)
         if select == 'Kill WebApp':
             taskManager.killType('Website')
-        if select == 'Start Server':
-            taskManager.startTask('Server', 'WebApp', "sudo python3 /opt/boobot/apps/System/programs/Server.py")
-        if select == 'Kill Server':
-            taskManager.killType('Server')
+        if select == 'Start WS Server':
+            taskManager.startTask('WebSocketServer', 'WebApp', "sudo python3 /opt/boobot/apps/System/programs/launchServerWebSocket.py")
+        if select == 'Kill WS Server':
+            taskManager.killType('WebSocketServer', True)
         if select == 'Done':
             return
 
 
-def startWebApp(menu, taskManager, configuration, serverStatus):
+def startWebApp(menu, taskManager, configuration, serverOn):
     quickExit = menu.displayToggle("Enable Quick Exit:", ['Yes', 'No'], 0)
 
-    if len(serverStatus) == 0:    
+    if not serverOn:
         if menu.displayToggle("Enable Server:", ['Yes', 'No'], 0) == 'Yes':
-            taskManager.startTask('Server', 'WebApp', "python3 /opt/boobot/apps/System/programs/Server.py")
-            
-    taskManager.startTask('Website', 'WebApp', "python3 /opt/boobot/apps/WebApp/Website/website.py")
+            taskManager.startTask('WebSocketServer', 'WebApp', "sudo python3 /opt/boobot/apps/System/programs/launchServerWebSocket.py")
+
+    if menu.displayToggle("Use WebRTC:", ['Yes', 'No'], 0) == 'Yes':
+        taskManager.startTask('Website', 'WebApp', "python3 /opt/boobot/apps/WebApp/Website/websiteWebRTC.py")
+    else:
+        taskManager.startTask('Website', 'WebApp', "python3 /opt/boobot/apps/WebApp/Website/websiteNoWebRTC.py")
+        
     menu.displayLargeMessage(["   Server Connection",
                               "Open a web browser",
                               "go to:", getIP() + ":" + configuration['Website']['Port'],
                               "      [Click to Exit]"])
-    
+
     if quickExit == 'Yes':
-        taskManager.killType('Server')
+        taskManager.killType('WebSocketServer', True)
         taskManager.killType('Website')
     
         

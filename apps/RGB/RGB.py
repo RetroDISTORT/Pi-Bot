@@ -37,35 +37,49 @@ def mainMenu(menu):
     loadConfig(serverConfig,   serverFile)
     
     while True:
-        select = menu.displayMenu(['Modes', 'Settings', 'Connection', 'About', 'Exit'])
+        select = menu.displayMenu(['Modes', 'Settings', 'Server', 'About', 'Exit'])
         
         if select == 'Modes':
-            modeMenu(menu, profilesConfig, getIP(), serverConfig['Socket']['Port'])
+            modeMenu(menu, profilesConfig, taskManager, getIP(), serverConfig['Socket']['Port'])
         if select == 'Settings':
             settingsMenu(menu, profilesConfig, profilesFile)
-        if select == 'Connection':
-            connectionMenu(menu, serverConfig, taskManager)
+        if select == 'Server':
+            serverMenu(menu, taskManager)
         if select == 'About':
-            menu.displayLargeMessage(["      Pi-Bot Server", "--------------------------", "       V 0.23.2.26", " Github: RetroDISTORT", "", "      [Click to Exit]"])
+            menu.displayLargeMessage(["      Pi-Bot Server", "--------------------------", "       V 0.23.3.28", " Github: RetroDISTORT", "", "      [Click to Exit]"])
         if select == 'Exit':
             menu.displayOff()
             return
 
-
-def connectionMenu(menu, serverConfig, taskManager):
+        
+def serverMenu(menu, taskManager):
     while True:
-        menuOptions = ['Start Server'] if len(taskManager.listType('Server')) == 0 else ['Kill Server']
-        select = menu.displayMenu(menuOptions + ['Info', 'Back'])
+        WSServer     = len(taskManager.listType('WebSocketServer')) >= 1
+        SServer      = len(taskManager.listType('SocketServer')) >= 1
+        menuOptions  = ['Server info', 'Back']
+        menuOptions += ['Kill WS Server'] if WSServer else ['Start WS Server']
+        menuOptions += ['Kill S Server']  if SServer  else ['Start S Server']
+        select = menu.displayMenu(menuOptions)
+    
+        if select == 'Start WS Server':
+            if menu.displayToggle("Enable:", ['True', 'False'], 0) == 'True':
+                taskManager.startTask('WebSocketServer', 'RGB', "sudo python3 /opt/boobot/apps/System/programs/launchServerWebSocket.py")
 
-        if select == 'Start Server':
-            taskManager.startTask('Server', 'RGB', "sudo python3 /opt/boobot/apps/System/programs/Server.py")
-        if select == 'Kill Server':
-            taskManager.killType('Server')
-        if select == 'Info':
-            menu.displayLargeMessage(["   Server Connection", "IP:"+getIP(), "Port(P):"+serverConfig['Website']['Port'], "Port(S):"+serverConfig['Socket']['Port'], "Port(WS):"+serverConfig['Websocket']['Port'], "      [Click to Exit]"])
+        if select == 'Start S Server':
+            if menu.displayToggle("Enable:", ['True', 'False'], 0) == 'True':
+                taskManager.startTask('SocketServer', 'RGB', "sudo python3 /opt/boobot/apps/System/programs/launchServerSocket.py")
+
+        if select == 'Kill S Server':
+            taskManager.killType('SocketServer', True)
+
+        if select == 'Kill WS Server':
+            taskManager.killType('WebSocketServer', True)
+
+        if select == 'Server info':
+            menu.displayLargeMessage(["   Server Connection", "IP: "+getIP(), "Port(WS): 9000", "Port(S): 9001", "", "      [Click to Exit]"])
+                
         if select == 'Back':
-            menu.displayOff()
-            return        
+            return
 
         
 def settingsMenu(menu, configuration, fileName):
@@ -81,12 +95,12 @@ def settingsMenu(menu, configuration, fileName):
 
         
 def modeMenu(menu, config, taskManager, ip, port):
-    if len(taskManager.listType('Server')) == 0:
+    if len(taskManager.listType('SocketServer')) == 0:
         menu.displayMessage("Server is off")
         return
     
-    select = menu.displayMenu(['Off', 'Glow Cycle', 'Pixel Cycle', 'Rainbow Cycle', 'VU', 'VU Stereo', '3 Point VU', 'Spectrum', 'Glow VU', 'Exit'])
-    if select != 'Exit':
+    select = menu.displayMenu(['Off', 'Glow Cycle', 'Pixel Cycle', 'Rainbow Cycle', 'VU', 'VU Stereo', '3 Point VU', 'Spectrum', 'Glow VU', 'Back'])
+    if select != 'Back':
         taskManager.killType('LED')
 
 
@@ -167,7 +181,7 @@ def modeMenu(menu, config, taskManager, ip, port):
                               config['3PointVU:Default']['reset'])
 
         
-    if select == 'Exit':
+    if select == 'Back':
         pass
     return
 

@@ -33,24 +33,29 @@ class TaskManager:
         return processList
 
     
-    def killPID(self, target):
-        try:
-            os.kill(int(target), SIGKILL)
-        except:
-            return 1
+    def killPID(self, target, sudo=False):
+        if sudo:
+            command = "sudo kill -9 " + target
+            os.system(command)
+            pass
+        else:
+            try:
+                os.kill(int(target), SIGKILL)
+            except:
+                return 1
         return 0
 
     
-    def killType(self, target):
+    def killType(self, target, sudo=False):
         errors = 0
         for process in self.listType(target):
-            errors += self.killPID(process[0])
+            errors += self.killPID(process[0], sudo)
         return errors
 
     
-    def killApplication(self, target):
+    def killApplication(self, target, sudo=False):
         errors = 0
-        for process in self.listApplication(target):
+        for process in self.listApplication(target, sudo):
             errors += self.killPID(process[0])
         return errors
 

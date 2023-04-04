@@ -22,9 +22,8 @@
       </div>
     
       <div id="media" class="screen">
-	<!-- <img id="video" class="video" src="static/images/stream.jpg"/> -->
-	<audio id="audio" autoplay="true"></audio>
-	<video id="video" class="video" autoplay="true" playsinline="true"></video>
+	<!-- <audio id="audio" autoplay="true"></audio> -->
+	<img id="video" class="video" src="stream.mjpg"/>
       </div>
     
 
@@ -34,14 +33,6 @@
 	  <img src="static/images/joystick_black.png" style="transform: translateX(-50%) translateY(-50%);"/>
 	</div>
 	<p id="slider_y"> Y: 0</p>
-	
-
-	<div class="option" style="position:fixed; bottom:80%">
-	  <input id="use-stun" type="checkbox"/>
-	  <label for="use-stun">Use STUN server</label>
-	</div>
-	<button id="startStreamButton" onclick="startStream()">Start</button>
-	<button id="stopStreamButton" style="display: none" onclick="stopStream()">Stop</button>
 	
       </div>
       

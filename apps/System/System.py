@@ -7,22 +7,27 @@ import configparser     # Required for ini files
 
 from signal import SIGKILL
 
-
 sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/display')
 from menu         import Menu
 
 sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/processes')
 from taskManager  import TaskManager    
 
+sys.path.insert(1, '/opt/boobot/apps/System/components/devices')
+from notificationSpeaker import NotificationSpeaker
+from servoSet            import ServoSet
+
 
 def mainMenu(menu):
     taskManager = TaskManager()
     
     while True:
-        select = menu.displayMenu(['Tasks', 'Server', 'About', 'Exit'])
+        select = menu.displayMenu(['Tasks', 'Server', 'Components', 'About', 'Exit'])
         
         if select == 'Tasks':
             taskPanel(menu, taskManager)
+        if select == 'Components':
+            componentMenu(menu, taskManager)
         if select == 'Server':        
             serverMenu(menu, taskManager)
         if select == 'Settings':
@@ -40,7 +45,7 @@ def getIP():
     IP = s.getsockname()[0]
             
     return IP
-        
+
         
 def taskPanel(menu, taskManager):
     while True:
@@ -62,48 +67,59 @@ def taskPanel(menu, taskManager):
         else:
             if menu.displayToggle("End Task:", ['Yes', 'No'], 0) == 'Yes':
                 taskPID = selectedTask.split()[0]
-                taskManager.killPID(taskPID)
-                menu.displayMessage(" PID:" + taskPID + " killed")
+                if taskManager.killPID(taskPID) == 0:
+                    menu.displayMessage(" PID:" + taskPID + " killed")
+                else:
+                    menu.displayMessage(" Could not Kill PID: " + taskPID + ". If this is a server, kill from server menu.")
 
+
+def componentMenu(menu, taskManager):
+    while True:    
+        menuOptions = ['Speaker', 'Disengage Servos', 'Exit']
+        select = menu.displayMenu(menuOptions)
+    
+        if select == 'Speaker':
+            speaker = NotificationSpeaker()
+            if menu.displayToggle("Enable:", ['True', 'False'], 0) == 'True':
+                speaker.disable()
+            else:
+                speaker.enable()
+
+        if select == 'Disengage Servos':
+            servos = ServoSet()
+            servos.disableServos()
+
+        if select == 'Exit':
+            return
+            
 
 def serverMenu(menu, taskManager):
     while True:
-        Server      = taskManager.listType('Server')
-        menuOptions = ['Start Server', 'Exit'] if len(Server) == 0 else ['Server info', 'Kill Server', 'Exit']
+        WSServer     = len(taskManager.listType('WebSocketServer')) >= 1
+        SServer      = len(taskManager.listType('SocketServer')) >= 1
+        menuOptions  = ['Server info', 'Back']
+        menuOptions += ['Kill WS Server'] if WSServer else ['Start WS Server']
+        menuOptions += ['Kill S Server']  if SServer  else ['Start S Server']
         select = menu.displayMenu(menuOptions)
     
-        if select == 'Start Server':
+        if select == 'Start WS Server':
             if menu.displayToggle("Enable:", ['True', 'False'], 0) == 'True':
-                taskManager.startTask('Server', 'System', "sudo python3 /opt/boobot/apps/System/programs/Server.py")
+                taskManager.startTask('WebSocketServer', 'System', "sudo python3 /opt/boobot/apps/System/programs/launchServerWebSocket.py")
 
-        if select == 'Kill Server':
-            taskManager.killType('Server')
+        if select == 'Start S Server':
+            if menu.displayToggle("Enable:", ['True', 'False'], 0) == 'True':
+                taskManager.startTask('SocketServer', 'System', "sudo python3 /opt/boobot/apps/System/programs/launchServerSocket.py")
+
+        if select == 'Kill S Server':
+            taskManager.killType('SocketServer', True)
+
+        if select == 'Kill WS Server':
+            taskManager.killType('WebSocketServer', True)
 
         if select == 'Server info':
             menu.displayLargeMessage(["   Server Connection", "IP: "+getIP(), "Port(WS): 9000", "Port(S): 9001", "", "      [Click to Exit]"])
                 
-        if select == 'Exit':
-            return
-            
-    
-def settingsMenu(menu):
-    while True:
-        select = menu.displayMenu(['Enable Manual Access', 'Enable LEDS', 'Enable Screen', 'Enable Wheels M.', 'Enable Camera M.', 'Enable Speaker', 'Enable Camera', 'Enable Microphone', 'Done'])
-        if select == 'Enable LEDS':
-            menu.displayToggle("Enable:", ['True', 'False'], 0)
-        if select == 'Enable Screen':
-            menu.displayToggle("Enable:", ['True', 'False'], 0)
-        if select == 'Enable Wheels M.':
-            menu.displayToggle("Enable:", ['True', 'False'], 0)
-        if select == 'Enable Camera M.':
-            menu.displayToggle("Enable:", ['True', 'False'], 0)
-        if select == 'Enable Speaker':
-            menu.displayToggle("Enable:", ['True', 'False'], 0)
-        if select == 'Enable Camera':
-            menu.displayToggle("Enable:", ['True', 'False'], 0)
-        if select == 'Enable Microphone':
-            menu.displayToggle("Enable:", ['True', 'False'], 0)
-        if select == 'Done':
+        if select == 'Back':
             return
 
 
@@ -113,7 +129,5 @@ def main():
     mainMenu(menu)
     
     
-
-
 if __name__ == "__main__":
     main()

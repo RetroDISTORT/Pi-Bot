@@ -1,8 +1,5 @@
 # checkout https://github.com/sonkm3/aiortc-example/tree/main/examples/raspberrypicamera
 
-
-# python3 webcam.py
-
 import argparse
 import asyncio
 import json
@@ -19,14 +16,15 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
 
-## I ADDED THIS
 import sys              # Required for loading special modules
 
-sys.path.insert(1, '/home/pi/Documents/boobot/apps/WebApp/Website/')
+sys.path.insert(1, '/opt/boobot/apps/System/components/devices/')
 from systemMic     import SystemMic
-## END
 
-relay = None
+ROOT = "/home/pi/Documents/boobot/apps/WebApp/"
+#ROOT = "/opt/boobot/apps/WebApp/"
+
+relay  = None
 webcam = None
 
 
@@ -41,7 +39,6 @@ def create_local_tracks(play_from, decode):
         player = MediaPlayer(play_from)
         return player.audio, player.video
     else:
-        audio_options = {"channels": "2", "sample_rate": "10000", "-sample_fmt" : "s32"}#"-acodec": "pcm_s32le"}
         #video_options = {"framerate": "30", "video_size": "640x480"}
         #video_options = {"framerate": "2", "video_size": "640x480"}
         #video_options = {"framerate": "5", "video_size": "320x240"} #Fast
@@ -61,53 +58,25 @@ def create_local_tracks(play_from, decode):
                 # cannot setup the audio format pcm_s32le 
                 #webcam_video = MediaPlayer("/dev/video0", format="v4l2", options=video_options).video
                 webcam = MediaPlayer("/dev/video0", format="v4l2", options=video_options)
-                #print("vvvvvvvvvvv")
-                #print(RTCRtpSender.getCapabilities("audio").codecs)
-                #webcam_audio = MediaPlayer("dmic_sv", format="alsa", options=audio_options).audio 
-                #webcam_audio = MediaPlayer("default", format="alsa").audio
-                #webcam_audio = MediaPlayer("sysdefault:CARD=sndrpii2scard", format="alsa", options=audio_options).audio
-                #webcam_audio = MediaPlayer("sysdefault:CARD=sndrpii2scard", format="alsa", options={'sample_rate':'12000'})
-                #webcam = MediaPlayer("/dev/video0", format="h264", options=options)
                 sysMic = SystemMic()
-                #mic    = sysMic      # Returns a MediaStreamTrack
                 
             relay = MediaRelay()
-        #return relay.subscribe(webcam_audio), relay.subscribe(webcam_video)
         return sysMic, relay.subscribe(webcam.video)
-        #return None, relay.subscribe(webcam.video)
 
-
-def force_codec(pc, sender, forced_codec):
-    kind = forced_codec.split("/")[0]
-    codecs = RTCRtpSender.getCapabilities(kind).codecs
-    transceiver = next(t for t in pc.getTransceivers() if t.sender == sender)
-    transceiver.setCodecPreferences(
-        [codec for codec in codecs if codec.mimeType == forced_codec]
-    )
-
-def serverInfo(ip, portws):
-    content = ("\nlet serverIP      = \"" + ip     + "\";" +
-               "\nlet websocketPort = "   + portws + ";"   +
-               "\n"
-               )
-    return content
     
 async def index(request):
-    content = open("/opt/boobot/apps/WebApp/Website/templates/index.html", "r").read()
+    content = open(ROOT+"Website/templates/indexWebRTC.html", "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
-async def javascript(request):
-    fileName   = '/opt/boobot/apps/WebApp/server.config'
-    config     = configparser.ConfigParser()
-    loadConfig(config, fileName)
-    
-    ip         = getIP("")
-    portws     = config['Websocket']['Port']
-    info = serverInfo(ip, portws)
-    
-    content = open("/opt/boobot/apps/WebApp/Website/static/scripts/client.js", "r").read()
-    return web.Response(content_type="application/javascript", text=info + content)
+async def webRTCJavascript(request):
+    content = open(ROOT+"Website/static/scripts/webRTC.js", "r").read()
+    return web.Response(content_type="application/javascript", text=content)
+
+
+async def controllerJavascript(request):
+    content = open(ROOT+"Website/static/scripts/controller.js", "r").read()
+    return web.Response(content_type="application/javascript", text=content)
 
 
 async def offer(request):
@@ -148,12 +117,9 @@ async def offer(request):
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
-    return web.Response(
-        content_type="application/json",
-        text=json.dumps(
-            {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
-        ),
-    )
+    WebResponse = web.Response( content_type="application/json", text=json.dumps( {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}),)
+
+    return WebResponse
 
 
 pcs = set()
@@ -175,10 +141,8 @@ if __name__ == "__main__":
     fileName   = '/opt/boobot/apps/WebApp/server.config'
     config     = configparser.ConfigParser()
     loadConfig(config, fileName)
-    ip         = getIP("")
+    ip         = ""
     port       = config['Website']['Port']
-    #os.chdir("/opt/boobot/apps/WebApp/Website/")
-    #print(os.getcwd())
     
     parser = argparse.ArgumentParser(description="WebRTC webcam demo")
     parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
@@ -193,7 +157,7 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--host", default=ip, help="Host for HTTP server (default: 0.0.0.0)"
+        "--host", default=getIP(ip), help="Host for HTTP server (default: 0.0.0.0)"
     )
     parser.add_argument(
         "--port", type=int, default=port, help="Port for HTTP server (default: 8080)"
@@ -221,8 +185,9 @@ if __name__ == "__main__":
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
-    app.router.add_get("/", index)
-    app.router.add_get("/client.js", javascript)
+    app.router.add_get("/index.html", index)
+    app.router.add_get("/webRTC.js", webRTCJavascript)
+    app.router.add_get("/controller.js", controllerJavascript)
     app.router.add_post("/offer", offer)
     app.router.add_static("/static/", path=str("/opt/boobot/apps/WebApp/Website/static/"))
     web.run_app(app, host=args.host, port=args.port, ssl_context=ssl_context)

@@ -22,7 +22,6 @@
       </div>
     
       <div id="media" class="screen">
-	<!-- <img id="video" class="video" src="static/images/stream.jpg"/> -->
 	<audio id="audio" autoplay="true"></audio>
 	<video id="video" class="video" autoplay="true" playsinline="true"></video>
       </div>
@@ -41,7 +40,7 @@
 	  <label for="use-stun">Use STUN server</label>
 	</div>
 	<button id="startStreamButton" onclick="startStream()">Start</button>
-	<button id="stopStreamButton" style="display: none" onclick="stop()">Stop</button>
+	<button id="stopStreamButton" style="display: none" onclick="stopStream()">Stop</button>
 	
       </div>
       
@@ -58,7 +57,8 @@
 
     </div>
     
-    <script src="/static/scripts/client.js"></script>
+    <script src="/controller.js"></script>
+    <script src="/webRTC.js"></script>
     
   </body>
 </html>

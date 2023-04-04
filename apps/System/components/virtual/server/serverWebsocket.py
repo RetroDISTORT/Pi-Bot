@@ -1,6 +1,7 @@
 import asyncio    # Used for websockets
 import websockets # Used for websockets
 import socket     # Required for sockets
+#import ssl
 
 class ServerWebsocket:
     def __init__(self, ip, port, executeMethod, loggerMethod):
@@ -8,7 +9,9 @@ class ServerWebsocket:
         self.log     = loggerMethod
         self.ip      = self.getIP(ip)
         self.port    = port
-        startServer  = websockets.serve(self.listen, self.ip, self.port, reuse_port=True )
+        #ssl_context  = ssl.SSLContext()
+        #ssl_context.load_cert_chain("/home/pi/Documents/certification/ws/ws.crt", "/home/pi/Documents/certification/ws/ws.key")
+        startServer  = websockets.serve(self.listen, self.ip, self.port, reuse_port=True)#, ssl=ssl_context)
         
         self.log("Server listening on " + str(self.ip)+ ":" + str(self.port))
         asyncio.get_event_loop().run_until_complete(startServer)

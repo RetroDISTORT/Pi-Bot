@@ -9,17 +9,55 @@
 ##############
 import pyaudio
 ##############
+import os
 import io
 import picamera
-from flask import Flask, Response,render_template
 import logging
 import socketserver
+import configparser     # Required for ini files
+
 from threading import Condition
-from http import server
+from http      import server
 
 RES = ['160x120', '320x240', '640x480', '1280x960']
 
-PAGE = open("./templates/indexNoWebRTC.html", "r").read()
+PAGE  = open("/opt/boobot/apps/WebApp/Website/templates/indexNoWebRTC.html", "r").read()
+CSS   = open("/opt/boobot/apps/WebApp/Website/static/css/style.css", "r").read()
+JS    = open("/opt/boobot/apps/WebApp/Website/static/scripts/client.js", "r").read()
+
+IMGBS = open("/opt/boobot/apps/WebApp/Website/static/images/joystick_base.png", "rb").read()
+IMGJS = open("/opt/boobot/apps/WebApp/Website/static/images/joystick_black.png", "rb").read()
+IMGSL = open("/opt/boobot/apps/WebApp/Website/static/images/slider.png", "rb").read()
+
+
+def getIP(IP):
+    return IP if IP != "" else os.popen("hostname -I").read().split()[0]
+
+
+def loadConfig(configuration, fileName):
+    configuration.read(fileName)
+    return
+
+
+def serverInfo(ip, portws):
+    content = ("\nlet serverIP      = \"" + ip     + "\";" +
+               "\nlet websocketPort = "   + portws + ";"   +
+               "\n"
+               )
+    return content
+
+
+def clientConfigJS():
+    fileName   = '/opt/boobot/apps/WebApp/server.config'
+    config     = configparser.ConfigParser()
+    loadConfig(config, fileName)
+    
+    ip         = getIP("")
+    portws     = config['Websocket']['Port']
+    info = serverInfo(ip, portws)
+    
+    return info + JS
+
 
 class StreamingOutput(object):
     def __init__(self):
@@ -50,6 +88,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_response(301)
             self.send_header('Location', '/index.html')
             self.end_headers()
+            
         elif self.path == '/index.html':
             content = PAGE.encode('utf-8')
             self.send_response(200)
@@ -57,6 +96,47 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Content-Length', len(content))
             self.end_headers()
             self.wfile.write(content)
+            
+        elif self.path == '/static/css/style.css':
+            content = CSS.encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/css')
+            self.send_header('Content-Length', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+
+        elif self.path == '/static/images/joystick_black.png':
+            content = IMGJS#.encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/png')
+            self.send_header('Content-Length', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+
+        elif self.path == '/static/images/joystick_base.png':
+            content = IMGBS#.encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/png')
+            self.send_header('Content-Length', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+
+        elif self.path == '/static/images/slider.png':
+            content = IMGSL#.encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/png')
+            self.send_header('Content-Length', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+
+        elif self.path == '/client.js':
+            content = clientConfigJS().encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/javascript')
+            self.send_header('Content-Length', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+        
         elif self.path == '/stream.mjpg':
             self.send_response(200)
             self.send_header('Age', 0)
@@ -90,10 +170,10 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 with picamera.PiCamera(resolution=RES[0], framerate=30) as camera:
     output = StreamingOutput()
     #Uncomment the next line to change your Pi's Camera rotation (in degrees)
-    camera.rotation = 180
+    #camera.rotation = 180
     camera.start_recording(output, format='mjpeg')
     try:
-        address = ('', 8000)
+        address = ('', 8080)
         server = StreamingServer(address, StreamingHandler)
         server.serve_forever()
     finally:

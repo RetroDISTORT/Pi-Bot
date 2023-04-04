@@ -8,7 +8,7 @@ class ServerSocket:
         self.headerSize = 10
         self.ip         = self.getIP(ip)
         self.port       = port
-        self.socket     = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket     = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
         
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((self.ip, self.port))

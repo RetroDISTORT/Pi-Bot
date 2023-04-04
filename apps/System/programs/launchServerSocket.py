@@ -2,15 +2,10 @@ import json
 import sys
 import logging
 
-from threading import Thread, Event, Lock
-
 sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/server')
-#sys.path.insert(1, '../../src/components/server')
-from serverWebsocket     import ServerWebsocket
 from serverSocket        import ServerSocket
 
 sys.path.insert(1, '/opt/boobot/apps/System/components/devices')
-#sys.path.insert(1, '../../src/components/devices')
 from servoSet            import ServoSet
 from notificationRing    import NotificationRing
 from notificationDisplay import NotificationDisplay
@@ -20,17 +15,17 @@ from batterySensor       import BatterySensor
 IP             = "" #"localhost"
 CONFIRM        = True        # Send a response to client to notify if the command has completed
 SOCKET_PORT    = 9001
-WEBSOCKET_PORT = 9000
 
-servos  = ServoSet()
-ring    = NotificationRing()
-display = NotificationDisplay()
-battery = BatterySensor()
+servos        = ServoSet()
+ring          = NotificationRing()
+display       = NotificationDisplay()
+battery       = BatterySensor()
 
 servos.servoAngle(0, None)
 servos.servoAngle(3, None)
 servos.servoAngle(9, None)
-    
+
+
 def logger(log):
     #print("log:", log)
     pass
@@ -113,9 +108,7 @@ def socketManager():
 
     
 def main():
-    socketThread  = Thread(target=socketManager)
-    socketThread.start()
-    ws            = ServerWebsocket(IP , WEBSOCKET_PORT, execute, logger)
+    socketManager()
 
     
 if __name__ == "__main__":
