@@ -20,7 +20,7 @@ def VUDFTRGB(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay, re
     
     brightness  = [0]*pixelCount
     extra       = 1      #Prevents dead time
-    resetCount  = 0
+    count       = reset
     VUMax       = 0
     boost       = .01
 
@@ -35,10 +35,13 @@ def VUDFTRGB(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay, re
         leftChannel, _ = tools.getChannelData()
         
         pixelColors = [(0,0,0)]*pixelCount
-        VULevels = tools.compute_fft(leftChannel)
+        VULevels    = tools.compute_fft(leftChannel)
 
-        if resetCount > reset:
-            resetCount = 0
+        if count > 0:
+            count -= 1
+        
+        if count == 0:
+            count = reset
             VUMax = 0
             
         VUMax = VUMax if VUMax > max(VULevels) else max(VULevels)
@@ -55,7 +58,6 @@ def VUDFTRGB(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay, re
             pixelColors[i], _ = tools.rainbow(subColor) # Rainbow color
 
             #pixelColors[i], pixelStep = rainbow(int(MapValue(VULevels[i], 0, VUMax, 0, 255))) # Intensity
-
             pixelColors[i] = tools.pixelBrightness(pixelColors[i], tools.MapValue(brightness[i], 0, VUMax, 0, 100))
 
         tools.sendToServer(pixelColors)

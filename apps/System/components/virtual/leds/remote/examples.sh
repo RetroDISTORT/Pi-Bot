@@ -22,14 +22,18 @@ E=(
 
 "spectrum.py $1 $2 0  4    0  50 .8 4000"
 
-"3PointVU.py $1 $2 0  4    0  50 .8 4000"
+"3PointVU.py $1 $2 0  4    0   0 .8"
+"3PointVU.py $1 $2 0  4    0  50 .8"
+
+"glowVU.py   $1 $2 0  5    0  .1 4000"
+"glowVU.py   $1 $2 0  4   50  .1 4000"
 )
 
 echo "LED Color animation code examples"
 echo ""
 echo "Make sure that the server is running using sudo!"
 echo "Command list:"
-for i in {0..14}
+for i in {0..17}
 do
     echo example ${i}. ${E[${i}]}
 done

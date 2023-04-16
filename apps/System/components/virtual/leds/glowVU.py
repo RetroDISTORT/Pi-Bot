@@ -3,7 +3,11 @@ import sys
 import numpy as np
 
 from struct import unpack
+
+sys.path.insert(1,'/opt/boobot/apps/System/components/virtual/client')
 from clientSocket import ClientSocket
+
+sys.path.insert(1,'/opt/boobot/apps/System/components/virtual/leds')
 from ledToolset import LedToolset
 
 
@@ -16,10 +20,12 @@ def VURGB(ip, port, pixelStep, colorSpeed, subColorSpeed, decay, reset):
     tools.createVU()
     
     pixelCount  = 16;
+    pixelColors = [(0,0,0)]*pixelCount
     maxVU       = 0
-    count       = 0
+    count       = reset
     CPeaks      = [0]*2
-    
+    color       = pixelStep
+
     while True:
         if count == 0:
             count = reset
@@ -35,17 +41,19 @@ def VURGB(ip, port, pixelStep, colorSpeed, subColorSpeed, decay, reset):
 
         if newPeaks[0]>maxVU:
             maxVU  = newPeaks[0]
-            #CPeaks = [0]*2
         
-        volume     = tools.MapValue(CPeaks[0], 0, maxVU, 0, 5000)
-            
-        pixelStep = tools.checkStep(pixelStep)
-        pixelColors, _ = tools.guage(volume, pixelCount, pixelStep, subColorSpeed, 0, 5001)
+        volume    = tools.MapValue(CPeaks[0], 0, maxVU, 0, 100)
+        color     = tools.checkStep(color+colorSpeed)
+        subColor  = color
         
+        for i in range(pixelCount):
+            subColor          = tools.checkStep(subColor)
+            pixelColors[i], _ = tools.rainbow(subColor)
+            pixelColors[i]    = tools.pixelBrightness(pixelColors[i], volume)
+            subColor         += subColorSpeed
+
         tools.sendToServer(pixelColors)
-
-        pixelStep-=colorSpeed
-
+            
         
 def main(pixelStep, colorSpeed, subColorSpeed, decay, reset, ip = "", port = ""):    
     VURGB(ip, port, pixelStep, colorSpeed, subColorSpeed, decay, reset)

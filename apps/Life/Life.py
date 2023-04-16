@@ -1,24 +1,11 @@
 import time
-import board
-import busio
 import random
-import digitalio
-import adafruit_ssd1306
+import sys              # Required for loading special modules
 
-import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
+sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/display')
+from menu         import Menu
+from canvas       import Canvas
 
-from PIL import Image, ImageDraw, ImageFont
-
-def get_fonts(dir):
-    fontXXL = ImageFont.truetype(dir+"ratchet-clank-psp.ttf", 32)
-    fontXL  = ImageFont.truetype(dir+"ratchet-clank-psp.ttf", 18)
-    fontL   = ImageFont.truetype(dir+"ratchet-clank-psp.ttf", 16)
-    fontM   = ImageFont.truetype(dir+"ratchet-clank-psp.ttf", 12)
-    fontS   = ImageFont.truetype(dir+"ratchet-clank-psp.ttf", 10)
-    fontXS  = ImageFont.truetype(dir+"ratchet-clank-psp.ttf",  8)
-    fontXXS = ImageFont.truetype(dir+"3x3-Mono.ttf",  4)
-    
-    return [fontXXL, fontXL, fontL, fontM, fontS, fontXS, fontXXS]
 
 #def loadWorld():
 
@@ -34,6 +21,7 @@ def cellFunction(state, neighbors, survive, spawn):
         
     return 0
 
+
 def newDay(world, survive, spawn):
     height   = len(world)
     width    = len(world[0])
@@ -47,6 +35,7 @@ def newDay(world, survive, spawn):
     
     clone(newWorld, world)
 
+    
 def clone(from_world, to_world):
     height   = len(from_world)
     width    = len(from_world[0])
@@ -55,7 +44,8 @@ def clone(from_world, to_world):
         for x in range(width):
             to_world[y].pop(0)
             to_world[y].insert(width,from_world[y][x])
-    
+
+            
 def neighbors(x,y,world):
     height = len(world)
     width  = len(world[0])
@@ -65,103 +55,122 @@ def neighbors(x,y,world):
     for check_y in range(y-1,y+2):
         for check_x in range(x-1,x+2):
             if not (check_x == x and check_y == y):                
-                count += 1 if world[check_y if check_y < height else 0][check_x if check_x < width else 0] == 1 else 0
-                
+                count += 1 if world[check_y if check_y < height else 0][check_x if check_x < width else 0] == 1 else 0    
     return count
+
 
 def createEmptyWorld(width, height):
     return [[0] * width for i in range(height)]
+
 
 def createRandomWorld(width, height, seed=random, population=50):
     random.seed(seed)
     return [[1 if random.randint(0,100) < population else 0  for i in range(width)] for j in range(height)]
 
-def startGame(screen, ruleSurvive, ruleSpawn, seed):
-    world = createRandomWorld(10, 64, seed = 5, population = 99)
+
+def startGame(display, menu, ruleSurvive, ruleSpawn, seed):
+    world        = createRandomWorld(50, 50, seed = 5, population = 99)
+    liveHistory  = [50*50]*40
+    day          = 0
     
     while(True):
-        drawWorld(screen, world)
+        drawWorld( 0, 7, display, world, liveHistory, day)
         newDay(world, ruleSurvive, ruleSpawn)
+        day += 1
+
         
-def drawWorld(screen, world):
+def drawWorld(x, y, display, world, liveHistory, day):
+    live   = 0
     width  = len(world[0])
     height = len(world)
     
-    image = Image.new('1', (screen.width, screen.height))
-    draw = ImageDraw.Draw(image)
+    for row in range(height):
+        for col in range(width):
+            if world[row][col] == 1:
+                live+=1
+                display.addPoint(x+col,y+row)
 
-    #DrawScreen
-    for y in range(height):
-        #print(world[y])
-        for x in range(width):
-            if world[y][x] == 1:
-                draw.point((x,y), 255)
-                      
-    screen.image(image)
-    screen.show()
+    liveHistory.append(live)
+    liveHistory.pop(0)
+    display.addText(60, 20, "Live:" + str(live))
+    display.addText(60, 30, "Day:" + str(day))
+    display.addGraph(60, 0, 40, 20, liveHistory)
+    display.drawCanvas()
+    
 
-
-def menu(screen, fonts):
-    image = Image.new('1', (screen.width, screen.height))
-    draw = ImageDraw.Draw(image)
-
+def gameSettings(display, menu):
     ruleSurvive = [2,3,7,8,9]
     ruleSpawn   = [3,8]
-    seed = "random";
+    seed        = "random"
 
-    #SideBar
-    draw.rectangle((0, 0, 60, screen.height), outline=0, fill=255)
-    draw.text((15,  0), "LIFE"   , font=fonts[1], anchor='mm', fill = 0)
-    draw.text((10, 20), "Survive", font=fonts[3], anchor='lm', fill = 0)
-    draw.text((10, 29), "Spawn"  , font=fonts[3], anchor='lm', fill = 0)
-    draw.text((10, 40), "Seed"   , font=fonts[3], anchor='lm', fill = 0)
-    draw.text((10, 50), "Start"  , font=fonts[3], anchor='lm', fill = 0)
-    draw.ellipse((3, 25, 7, 29), fill=0)
+    while True:
+        selected = menu.displayMenu(['Start Random', 'Load World', 'Survive Rules', 'Spawn Rules', 'Random Seed', 'Back'])
+
+        if selected == 'Start Random':
+            startGame(display, menu, ruleSurvive, ruleSpawn, seed)
+
+        if selected == 'Load World':
+            menu.displayMessage("This feature is not available yet")
+
+        if selected == 'Survive Rules':
+            menuOptions = [[str(i), i in ruleSurvive] for i in range(0,10)] + ['Back']
+            while True:
+                select, menuOptions = menu.displayMenu(menuOptions, True)
+                if select == 'Back':
+                    break
+                else:
+                    if int(select) in ruleSurvive:
+                        ruleSurvive.remove(int(select))
+                    else:
+                        ruleSurvive.append(int(select))
+                    menuOptions[0][1] = int(select) in ruleSurvive
+                
+                
+        if selected == 'Spawn Rules':
+            menuOptions = [[str(i), i in ruleSpawn] for i in range(0,10)] + ['Back']
+            while True:
+                select, menuOptions = menu.displayMenu(menuOptions, True)
+                if select == 'Back':
+                    break
+                else:
+                    if int(select) in ruleSpawn:
+                        ruleSpawn.remove(int(select))
+                    else:
+                        ruleSpawn.append(int(select))
+                    menuOptions[0][1] = int(select) in ruleSpawn
+
+        if selected == 'Load World':
+            menu.displayMessage("This feature is not available yet")
+            
+        if selected == 'Back':
+            return
+        
     
-    #draw.text((63, 10), "123456789"  , font=fonts[3], anchor='mm', fill = 255)
-    vals = ''.join(str(i) for i in ruleSurvive)
-    draw.text((63, 22), vals, font=fonts[3], anchor='lm', fill = 255)
-    vals = ''.join(str(i) for i in ruleSpawn)
-    draw.text((63, 33), vals, font=fonts[3], anchor='lm', fill = 255)
-    draw.text((63, 42), seed, font=fonts[3], anchor='lm', fill = 255)
+def gameMenu(display, menu):
+    titleFont = display.loadFont('/opt/boobot/apps/System/fonts/ratchet-clank-psp.ttf', 32)
+    pressed   = []
     
-    
-    screen.image(image)
-    screen.show()
-    
-    startGame(screen, ruleSurvive, ruleSpawn, seed)
+    while True:
+        display.addRectangle(0,0,128,32,0,255)
+        display.addText(30, -5, "LIFE", fill=0, font=titleFont)
+        display.addText(90, 40, "Start")
+        display.addText(10, 40, "Exit")
+        display.drawCanvas()
+        while len(pressed)==0:
+            pressed = menu.getInput()
+            if 'up' in pressed:
+                menu.displayOff()
+                return
+            if 'down' in pressed:
+                gameSettings(display, menu)
+
 
 def main():
-    WIDTH = 128
-    HEIGHT = 64
-    BORDER = 0
-    
-    i2c = busio.I2C(board.SCL, board.SDA)
-    oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
-    fontList = get_fonts('/opt/boobot/fonts/')
+    display  = Canvas() 
+    menu     = Menu()
+    menu.setGPIO()
+    gameMenu(display, menu)
 
-    oled.contrast(1) # Max contrast is 255
-    
-    GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # DOWN       Order:
-    GPIO.setup(8, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # UP      [U][C][D][O]
-    GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_UP) # CENTER
-    
-    #oled.fill(0)
-    #oled.show()
-
-
-    time.sleep(1)
-    
-    done = False
-
-    
-    #while(not done):
-    #    done = done or GPIO.input(7)  == 0 # DOWN
-    #    done = done or GPIO.input(8)  == 0 # UP
-    #    done = done or GPIO.input(25) == 0 # CENTER
-    menu(oled, fontList)
-
-    time.sleep(.1)
         
 if __name__ == "__main__":
     main()

@@ -1,9 +1,8 @@
 import time
 import sys
 
-from struct       import unpack
 from clientSocket import ClientSocket
-from ledToolset   import LedToolset
+from ledToolset import LedToolset
 
 
 def rainbowCycle(ip, port, speed):

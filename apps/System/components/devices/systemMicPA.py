@@ -23,8 +23,8 @@ class SystemMic(MediaStreamTrack):
         self.INDEX        = 0
         self.FORMATAF     = 's16'   #'s32'                           # s32_le
         self.LAYOUT       = 'stereo'
-        self.sampleCount  = 0
-        self.live         = 1
+        self.SAMPLE_COUNT = 0
+        self.LIVE         = True
         
         self.audio        = pyaudio.PyAudio()
         self.stream       = self.audio.open(format=self.FORMAT,
@@ -38,13 +38,13 @@ class SystemMic(MediaStreamTrack):
         self.micData          = None
         self.micDataLock      = Lock()
         self.newMicDataEvent  = Event()
-        self.newMicDataEvent.clear()
         self.captureThread    = Thread(target=self.capture)
+        self.newMicDataEvent.clear()
         self.captureThread.start()
         
 
     def capture(self):
-        while self.live:
+        while self.LIVE:
             data  = np.fromstring(self.stream.read(self.CHUNK, exception_on_overflow = False),dtype=np.int32)
             
             with self.micDataLock:
@@ -64,12 +64,12 @@ class SystemMic(MediaStreamTrack):
             self.newMicDataEvent.clear()
         
         frame   = av.AudioFrame.from_ndarray(data, self.FORMATAF, layout=self.LAYOUT)
-        frame.pts         = self.sampleCount
-        frame.rate        = self.RATE
-        self.sampleCount += frame.samples
+        frame.pts          = self.SAMPLE_COUNT
+        frame.rate         = self.RATE
+        self.SAMPLE_COUNT += frame.samples
 
         return frame
 
     def stop(self):
-        self.live = 0
+        self.LIVE = False
         super.stop()

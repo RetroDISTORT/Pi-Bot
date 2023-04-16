@@ -13,30 +13,39 @@ import os
 import io
 import picamera
 import logging
+import argparse         # Requried for argument parsing
 import socketserver
 import configparser     # Required for ini files
 
 from threading import Condition
 from http      import server
 
-RES = ['160x120', '320x240', '640x480', '1280x960']
+RES    = ['160x120', '320x240', '640x480', '1280x960']
 
-PAGE  = open("/opt/boobot/apps/WebApp/Website/templates/indexNoWebRTC.html", "r").read()
-CSS   = open("/opt/boobot/apps/WebApp/Website/static/css/style.css", "r").read()
-JS    = open("/opt/boobot/apps/WebApp/Website/static/scripts/client.js", "r").read()
+PAGE   = open("/opt/boobot/apps/WebApp/Website/templates/indexNoWebRTC.html", "r").read()
+CSS    = open("/opt/boobot/apps/WebApp/Website/static/css/style.css", "r").read()
+CTRLJS = open("/opt/boobot/apps/WebApp/Website/static/scripts/controller.js", "r").read()
+WSJS   = open("/opt/boobot/apps/WebApp/Website/static/scripts/websocket.js", "r").read()
 
-IMGBS = open("/opt/boobot/apps/WebApp/Website/static/images/joystick_base.png", "rb").read()
-IMGJS = open("/opt/boobot/apps/WebApp/Website/static/images/joystick_black.png", "rb").read()
-IMGSL = open("/opt/boobot/apps/WebApp/Website/static/images/slider.png", "rb").read()
+IMGBS  = open("/opt/boobot/apps/WebApp/Website/static/images/joystick_base.png", "rb").read()
+IMGJS  = open("/opt/boobot/apps/WebApp/Website/static/images/joystick_black.png", "rb").read()
+IMGSL  = open("/opt/boobot/apps/WebApp/Website/static/images/slider.png", "rb").read()
 
 
 def getIP(IP):
     return IP if IP != "" else os.popen("hostname -I").read().split()[0]
 
 
-def loadConfig(configuration, fileName):
-    configuration.read(fileName)
-    return
+def connectionInfo(config):
+    section = 'WebsiteLocal' if config['Settings'].getboolean('local settings') else 'WebsiteRemote'
+    ip      = getIP(config[section]['ip'])
+    portW   = config[section]['Port']
+    portWS  = config[section]['websocketport']
+    portS   = config['Socket']['Port']
+    cert    = config['WebsiteCertificate']['certificate']
+    key     = config['WebsiteCertificate']['key']
+
+    return section, ip, portW, portWS, portS, cert, key
 
 
 def serverInfo(ip, portws):
@@ -48,15 +57,11 @@ def serverInfo(ip, portws):
 
 
 def clientConfigJS():
-    fileName   = '/opt/boobot/apps/WebApp/server.config'
-    config     = configparser.ConfigParser()
-    loadConfig(config, fileName)
+    section, ip, portW, portWS, portS, cert, key = connectionInfo(configuration)
+    ip         = getIP(ip)
+    info = serverInfo(ip, portWS)
     
-    ip         = getIP("")
-    portws     = config['Websocket']['Port']
-    info = serverInfo(ip, portws)
-    
-    return info + JS
+    return info + WSJS
 
 
 class StreamingOutput(object):
@@ -82,6 +87,7 @@ class StreamingOutput(object):
             self.buffer.seek(0)
         return self.buffer.write(buf)
 
+    
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/':
@@ -129,7 +135,15 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(content)
 
-        elif self.path == '/client.js':
+        elif self.path == '/static/scripts/controller.js':
+            content = CTRLJS.encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/javascript')
+            self.send_header('Content-Length', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+
+        elif self.path == '/static/scripts/websocket.js':
             content = clientConfigJS().encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'text/javascript')
@@ -163,18 +177,30 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_error(404)
             self.end_headers()
 
+            
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     allow_reuse_address = True
-    daemon_threads = True
+    daemon_threads      = True
 
-with picamera.PiCamera(resolution=RES[0], framerate=30) as camera:
-    output = StreamingOutput()
-    #Uncomment the next line to change your Pi's Camera rotation (in degrees)
-    #camera.rotation = 180
-    camera.start_recording(output, format='mjpeg')
-    try:
-        address = ('', 8080)
-        server = StreamingServer(address, StreamingHandler)
-        server.serve_forever()
-    finally:
-        camera.stop_recording()
+    
+if __name__ == "__main__":
+    global config
+    print("Hello")
+    parser = argparse.ArgumentParser(description="Pibot WebApp")
+    parser.add_argument("--config-file", default="/opt/boobot/apps/WebApp/configuration/app.config", help="File with configuration")
+    args          = parser.parse_args()
+    configuration = configparser.ConfigParser()
+    configuration.read(args.config_file)
+    section, ip, portW, portWS, portS, cert, key = connectionInfo(configuration)
+
+    print(ip)
+    with picamera.PiCamera(resolution=RES[0], framerate=30) as camera:
+        output = StreamingOutput()
+        camera.start_recording(output, format='mjpeg')
+        try:
+            address = (getIP(ip), int(portW))
+            server  = StreamingServer(address, StreamingHandler)
+            server.serve_forever()
+        finally:
+            camera.stop_recording()
+    

@@ -66,10 +66,9 @@ async def offer(request):
 
     log_info("Created for %s", request.remote)
 
-
     # prepare local media
     pibotMicrophone, pibotCamera = create_local_tracks()
-    pibotSpeaker = SystemSpeaker()
+    pibotSpeaker                 = SystemSpeaker()
     #pibotSpeaker = MediaBlackhole()
     
     @pc.on("datachannel")

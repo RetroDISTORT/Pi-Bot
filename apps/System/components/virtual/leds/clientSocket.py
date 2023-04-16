@@ -1,10 +1,3 @@
-# 
-# Note:
-#    If messages are being sent, but not recieved:
-#      - Check if the messages are being sent slow enough for the server to respond  
-#      - Check if the server is waiting for server response
-#
-
 import socket
 import select
 
@@ -14,7 +7,8 @@ class ClientSocket:
         self.port         = port
         self.headerSize   = 10
         self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
+
+        print(self.ip, self.port)
         self.clientSocket.connect((self.ip, self.port))
         self.clientSocket.setblocking(False)
 
@@ -36,7 +30,7 @@ class ClientSocket:
             
                 while True:
                     _, _, _ = select.select([self.clientSocket], [], []) #Waits for a socket signal
-                    message = self.clientSocket.recv(self.headerSize)
+                    message = self.clientSocket.recv(16)
                     
                     if len(fullMessage)==0:
                         messageLength = int(message[:self.headerSize])

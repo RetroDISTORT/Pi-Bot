@@ -3,12 +3,12 @@ import sys
 import numpy as np
 from math import ceil as ceil
 
-from struct       import unpack
+from struct import unpack
 from clientSocket import ClientSocket
-from ledToolset   import LedToolset
+from ledToolset import LedToolset
 
 
-def VUDFTRGB3P(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay, reset):
+def VUDFTRGB3P(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay):
     tools       = LedToolset()
     pixelCount  = 16
     extra       = 1      #Prevents dead time due to slow buffer extraction
@@ -16,6 +16,7 @@ def VUDFTRGB3P(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay, 
     value       = [0,0,0]
     levelPixels = [5,6,5]
     maxValue    = [5,5,5]
+    color       = pixelStep
 
     if (ip != "" and port != ""):
         tools.startClientThread(ip, int(port))
@@ -52,28 +53,27 @@ def VUDFTRGB3P(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay, 
         for b in brightness:
             allBrightness += b
             
-        pixelStep += colorSpeed
-        pixelStep = tools.checkStep(pixelStep)
+        color    = tools.checkStep(color + colorSpeed)
+        subColor = color
         for pixel in range(pixelCount):
-            pixelStep                    += subColorSpeed
-            pixelColors[pixel], pixelStep = tools.rainbow(pixelStep)
-            pixelColors[pixel]            = tools.pixelBrightness(pixelColors[pixel], max(allBrightness[pixel],2))
+            pixelColors[pixel], subColor = tools.rainbow(subColor)
+            pixelColors[pixel]           = tools.pixelBrightness(pixelColors[pixel], max(allBrightness[pixel],2))
+            subColor                     = tools.checkStep(subColor + subColorSpeed)
 
         tools.sendToServer(pixelColors)
         
         
-def main(pixelStep, colorSpeed, subColor, subColorSpeed, decay, reset, ip = "", port = ""):
-    VUDFTRGB3P(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay, reset)
+def main(pixelStep, colorSpeed, subColor, subColorSpeed, decay, ip = "", port = ""):
+    VUDFTRGB3P(ip, port, pixelStep, colorSpeed, subColor, subColorSpeed, decay)
     
     
 if __name__ == "__main__":
-    if (len(sys.argv) == 9):
+    if (len(sys.argv) == 8):
         main(float(sys.argv[3]),
              float(sys.argv[4]),
              float(sys.argv[5]),
              float(sys.argv[6]),
              float(sys.argv[7]),
-             float(sys.argv[8]),
              ip   = sys.argv[1],
              port = sys.argv[2] )
     else:
@@ -81,5 +81,4 @@ if __name__ == "__main__":
              float(sys.argv[2]),
              float(sys.argv[3]),
              float(sys.argv[4]),
-             float(sys.argv[5]),
-             float(sys.argv[6]))
+             float(sys.argv[5]))

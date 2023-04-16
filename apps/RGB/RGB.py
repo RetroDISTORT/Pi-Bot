@@ -3,17 +3,12 @@ import time             # Required for delays
 import sys              # Required for loading special modules
 import configparser     # Required for ini files
 
-#sys.path.insert(1, '/opt/boobot/apps/System/components/server')
-sys.path.insert(1, '/home/pi/Documents/boobot/apps/System/components/virtual/display')
+
+sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/display')
 from menu     import Menu
 
-sys.path.insert(1, '/home/pi/Documents/boobot/apps/System/components/virtual/processes')
+sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/processes')
 from taskManager     import TaskManager
-
-# glow cycle(4):  stepStart colorSpeed glowSpeed brightness
-# pixel cycle(5): stepStart colorSpeed glowSpeed pixelSpeed brightness
-# VU(5):          stepStart colorSpeed subColorSpeed decay reset
-# 3 Point VU(6):  stepStart colorSpeed subColor subColorSpeed decay reset
 
 
 stepStart     = "0"
@@ -23,26 +18,22 @@ pixelSpeed    = ".1"
 brightness    = "3"
 subColor      = "0"
 subColorSpeed = "50"
-decay         = ".80" # VU meter peak decay
+decay         = ".80"  # VU meter peak decay
 reset         = "4000" # Steps until VU meter max peak reset
 
 
-def mainMenu(menu):
-    profilesFile   = '/opt/boobot/apps/RGB/settings/profiles.config'
-    serverFile     = '/opt/boobot/apps/RGB/settings/server.config'
-    profilesConfig = configparser.ConfigParser()
-    serverConfig   = configparser.ConfigParser()
+def mainMenu(menu, configurationFile):
+    appConfig      = configparser.ConfigParser()
     taskManager    = TaskManager()
-    loadConfig(profilesConfig, profilesFile)
-    loadConfig(serverConfig,   serverFile)
-    
+    loadConfig(appConfig, configurationFile)
+    modeMenu(menu, appConfig, taskManager, getIP(), appConfig['Socket']['port'])
     while True:
         select = menu.displayMenu(['Modes', 'Settings', 'Server', 'About', 'Exit'])
         
         if select == 'Modes':
-            modeMenu(menu, profilesConfig, taskManager, getIP(), serverConfig['Socket']['Port'])
+            modeMenu(menu, appConfig, taskManager, getIP(), appConfig['Socket']['port'])
         if select == 'Settings':
-            settingsMenu(menu, profilesConfig, profilesFile)
+            settingsMenu(menu, appConfig, configurationFile)
         if select == 'Server':
             serverMenu(menu, taskManager)
         if select == 'About':
@@ -63,11 +54,11 @@ def serverMenu(menu, taskManager):
     
         if select == 'Start WS Server':
             if menu.displayToggle("Enable:", ['True', 'False'], 0) == 'True':
-                taskManager.startTask('WebSocketServer', 'RGB', "sudo python3 /opt/boobot/apps/System/programs/launchServerWebSocket.py")
+                taskManager.startTask('WebSocketServer', 'RGB', "python3 /opt/boobot/apps/System/programs/launchServerWebSocket.py", True)
 
         if select == 'Start S Server':
             if menu.displayToggle("Enable:", ['True', 'False'], 0) == 'True':
-                taskManager.startTask('SocketServer', 'RGB', "sudo python3 /opt/boobot/apps/System/programs/launchServerSocket.py")
+                taskManager.startTask('SocketServer', 'RGB', "python3 /opt/boobot/apps/System/programs/launchServerSocket.py", True)
 
         if select == 'Kill S Server':
             taskManager.killType('SocketServer', True)
@@ -156,7 +147,14 @@ def modeMenu(menu, config, taskManager, ip, port):
                               config['VU:Default']['reset'])
         
     if select == 'Glow VU':
-        pass
+        taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/glowVU.py " +
+                              ip    + " " +
+                              port  + " " +
+                              config['GlowVU:Default']['stepStart']      + " " + #  0
+                              config['GlowVU:Default']['colorSpeed']     + " " + #  4
+                              config['GlowVU:Default']['subColorSpeed']  + " " + # 50
+                              config['GlowVU:Default']['decay']          + " " + # .1
+                              config['GlowVU:Default']['reset'])                 # 4000
     
     if select == 'Spectrum':
         taskManager.startTask("LED", "RGB", "python3 /opt/boobot/apps/System/components/virtual/leds/spectrum.py " +
@@ -177,8 +175,7 @@ def modeMenu(menu, config, taskManager, ip, port):
                               config['3PointVU:Default']['colorSpeed']     + " " +
                               config['3PointVU:Default']['subColor']       + " " +
                               config['3PointVU:Default']['subColorSpeed']  + " " +
-                              config['3PointVU:Default']['decay']          + " " +
-                              config['3PointVU:Default']['reset'])
+                              config['3PointVU:Default']['decay'])
 
         
     if select == 'Back':
@@ -186,43 +183,14 @@ def modeMenu(menu, config, taskManager, ip, port):
     return
 
 
-def createConfig(configuration):
-    configuration['GlowCycle:Default']  = { 'stepStart'    : "0",
-                                            'colorSpeed'   : "4",
-                                            'glowSpeed'    : "2",
-                                            'brightness'   : "100",
-                                           }                
-    
-    configuration['PixelCycle:Default'] = {'stepStart'     : '0',
-                                           'colorSpeed'    : '1',
-                                           'glowSpeed'     : '0',
-                                           'pixelSpeed'    : '-.2',
-                                           'brightness'    : '5',
-                                           }
-    
-    configuration['VU:Default']         = {'stepStart'     : "0",
-                                           'colorSpeed'    : "-2",
-                                           'subColorSpeed' : "17.4",
-                                           'decay'         : ".65",
-                                           'reset'         : "4000",
-                                           }
-    
-    configuration['Spectrum:Default']   = {'stepStart'     : "0",
-                                           'colorSpeed'    : "4",
-                                           'subColor'      : "0",
-                                           'subColorSpeed' : "50",
-                                           'decay'         : ".8",
-                                           'reset'         : "4000",
-                                           }
-    
-    configuration['3PointVU:Default']   = {'stepStart'     : "0",
-                                           'colorSpeed'    : "4",
-                                           'subColor'      : "0",
-                                           'subColorSpeed' : "50",
-                                           'decay'         : ".8",
-                                           'reset'         : "4000",
-                                           }
-    return
+def createConfig(configurationDirectory, configurationFile, templateFile):
+    createFolder    = "mkdir -p " + configurationDirectory
+    copyTemplate    = "cp " + templateFile + " " + configurationFile
+
+    os.system(createFolder)
+
+    if not os.path.isfile(os.path.expanduser(configurationFile)):
+        os.system(copyTemplate)
 
 
 def saveConfig(configuration, fileName):
@@ -232,7 +200,7 @@ def saveConfig(configuration, fileName):
 
 
 def loadConfig(configuration, fileName):
-    configuration.read(fileName)
+    configuration.read(os.path.expanduser(fileName))
     return
 
 
@@ -241,9 +209,14 @@ def getIP():
 
 
 def main():
+    configDirectory = "~/.boobot/RGB"
+    configFile      = "~/.boobot/RGB/rgb.config"
+    templateFile    = "/opt/boobot/apps/RGB/configuration/rgb.config"
+    
+    createConfig(configDirectory, configFile, templateFile)
     menu = Menu('/opt/boobot/apps/System/fonts/ratchet-clank-psp.ttf', 12)
     time.sleep(.5)
-    mainMenu(menu)
+    mainMenu(menu, configFile)
 
     
 if __name__ == "__main__":

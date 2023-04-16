@@ -49,7 +49,7 @@ def VURGB(ip, port, pixelStep, colorSpeed, subColorSpeed, decay, reset):
         tools.sendToServer(pixelColors)
 
         pixelStep-=colorSpeed
-    
+
         
 def main(pixelStep, colorSpeed, subColorSpeed, decay, reset, ip = "", port = ""):    
     VURGB(ip, port, pixelStep, colorSpeed, subColorSpeed, decay, reset)

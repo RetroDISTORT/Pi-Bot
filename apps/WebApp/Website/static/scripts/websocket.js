@@ -4,6 +4,7 @@ let ws;
 function sendToServer(data) {
     if (!ws){
 	console.log("No Websocket connection")
+	init()
 	return;
     }
 
@@ -19,9 +20,25 @@ function init() {
 	document.getElementById("sendButton").disabled = true;
     }
 
-    wsAddress    = 'wss://' + serverIP + ':' + websocketPort;
+    wsAddress    = 'ws://' + serverIP + ':' + websocketPort;
     ws           = new WebSocket(wsAddress);//, { rejectUnauthorized: false });
     ws.onopen    = () => { document.getElementById("sendButton").disabled = false; };
     ws.onmessage = ({ data }) => showMessage(data);//showMessage(data);
     ws.onclose   = function() { ws = null; document.getElementById("sendButton").disabled = true;};
 }
+
+
+function sendUpdate(){
+    sendToServer(controlsJSON());
+}
+
+
+function showMessage(message) {
+    commandHistory = document.getElementById("commandHistory");
+    commandHistory.textContent += `\n${message}`;
+    commandHistory.scrollTop = commandHistory.scrollHeight;
+    commandHistory.value = '';
+}
+
+
+var t=setInterval(sendUpdate, 40);

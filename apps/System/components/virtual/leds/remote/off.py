@@ -2,8 +2,7 @@ import time
 import sys
 
 from clientSocket import ClientSocket
-from ledToolset   import LedToolset
-
+from ledToolset import LedToolset      
        
 def RGB_OFF(ip, port):
     tools        = LedToolset()

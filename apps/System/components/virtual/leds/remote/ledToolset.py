@@ -10,7 +10,9 @@ from math import ceil as ceil
 from struct import unpack
 from threading import Thread, Event, Lock
 
+sys.path.insert(1,'/opt/boobot/apps/System/components/virtual/client')
 from clientSocket import ClientSocket
+
 
 class LedToolset:
     def __init__(self):
@@ -18,7 +20,7 @@ class LedToolset:
         self.port             = 9001
         #self.delay            = 1/audio_updates
         self.headerSize       = 10
-        #self.IP               = ""
+        self.IP               = "10.0.0.17"
         #self.PORT             = 9001
         #self.confirmation     = True
         self.brightness       = .1

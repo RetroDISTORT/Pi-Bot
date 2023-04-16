@@ -9,7 +9,7 @@
 var pc = null;
 
 // data channel
-var dc = null, dcInterval = null;
+var dc = null, dcInterval = null, serverReady = true;
 
 function createPeerConnection() {
     var config = {
@@ -134,38 +134,25 @@ function startStream() {
         dc.onopen = function() {
             //dataChannelLog.textContent += '- open\n';
             dcInterval = setInterval(function() {
-                var message = controlsJSON();/*'ping ' + current_stamp();*/
+		if (serverReady) {
+		    var message = controlsJSON();
+		    serverReady = false;
+		    dc.send(message);
+		}    
                 //dataChannelLog.textContent += '> ' + message + '\n';
-                dc.send(message);
-            }, 1000);
+            }, 10);
         };
         dc.onmessage = function(evt) {
             //dataChannelLog.textContent += '< ' + evt.data + '\n';
-
-            if (evt.data.substring(0, 4) === 'pong') {
-                var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-                //dataChannelLog.textContent += ' RTT ' + elapsed_ms + ' ms\n';
-            }
+	    showMessage(evt.data)
+	    serverReady = true;
         };
     }
 
     var constraints = {
         audio: true,//document.getElementById('use-audio').checked,
-        video: false
+        video: true//false
     };
-
-    /*if (document.getElementById('use-video').checked) {
-        var resolution = document.getElementById('video-resolution').value;
-        if (resolution) {
-            resolution = resolution.split('x');
-            constraints.video = {
-                width: parseInt(resolution[0], 0),
-                height: parseInt(resolution[1], 0)
-            };
-        } else {
-            constraints.video = true;
-        }
-    }*/
 
     if (constraints.audio || constraints.video) {
         if (constraints.video) {
@@ -273,4 +260,20 @@ function sdpFilterCodec(kind, codec, realSdp) {
 
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+
+function sendCommand(){
+    command       = document.getElementById("commandInput");
+    message       = {'message' : command.value}
+    command.value = "";
+    sendToServer(JSON.stringify(message));
+}
+
+
+function showMessage(message) {
+    commandHistory = document.getElementById("commandHistory");
+    commandHistory.textContent += `\n${message}`;
+    commandHistory.scrollTop = commandHistory.scrollHeight;
+    commandHistory.value = '';
 }

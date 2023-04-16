@@ -3,7 +3,7 @@ sys.path.insert(1, './')
 from clientSocket import ClientSocket
 
 IP   = "10.0.0.17"
-IP   = "192.168.43.214"
+#IP   = "192.168.43.214"
 PORT = 9001 
 
 servoTest1 = ('{'
@@ -11,14 +11,14 @@ servoTest1 = ('{'
              '"command":          "setAllServos",'
              '"leftServoAngle":   100,'
              '"rightServoAngle":  100,'
-             '"cameraServoAngle":  0'
+             '"cameraServoAngle": 0'
              '}')
 
 servoTest2 = ('{'
              '"device":  "Servo",'
              '"command": "setServo",'
              '"servo":   9,'
-             '"angle":   10'
+             '"angle":   10.9'
              '}')
 
 servoTest3 = ('{'
@@ -121,5 +121,5 @@ userTest = ('{'
              '}')
 
 socket = ClientSocket(IP, PORT)
-socket.send(servoTest3)
+socket.send(servoTest1)
 print(socket.recieve())

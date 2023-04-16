@@ -192,21 +192,6 @@ function controlsJSON(){
 }
 
 
-function sendCommand(){
-    command       = document.getElementById("commandInput");
-    message       = {'message' : command.value}
-    command.value = "";
-    sendToServer(JSON.stringify(message));
-}
-
-function showMessage(message) {
-    commandHistory = document.getElementById("commandHistory");
-    commandHistory.textContent += `\n${message}`;
-    commandHistory.scrollTop = commandHistory.scrollHeight;
-    commandHistory.value = '';
-}
-
-
 function resize(){
     let screen = document.getElementById("media");
     let video        = document.getElementById("video");

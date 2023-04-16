@@ -17,7 +17,7 @@ CONFIRM        = True        # Send a response to client to notify if the comman
 WEBSOCKET_PORT = 9000
 
 servos        = ServoSet()
-ring          = NotificationRing()
+#ring          = NotificationRing() # can only be launched by local socket
 display       = NotificationDisplay()
 battery       = BatterySensor()
 
@@ -64,18 +64,18 @@ def execute(message):
         elif input["command"] == "clear":
             display.clear()
 
-    elif input["device"] == "LED":
-        if input["command"] == "setBrightness":
-            ring.setBrightness(input["brightness"])
+    # elif input["device"] == "LED":
+    #     if input["command"] == "setBrightness":
+    #         ring.setBrightness(input["brightness"])
 
-        elif input["command"] == "clear":
-            ring.clear()
+    #     elif input["command"] == "clear":
+    #         ring.clear()
             
-        elif input["command"] == "fill":
-            ring.fill(input["color"])
+    #     elif input["command"] == "fill":
+    #         ring.fill(input["color"])
 
-        elif input["command"] == "setPixels":
-            ring.setPixels(input["colors"])
+    #     elif input["command"] == "setPixels":
+    #         ring.setPixels(input["colors"])
 
     elif input["device"] == "Battery":
         if input["command"] == "voltage":

@@ -1,92 +1,67 @@
-import board
-import busio
-import adafruit_ssd1306
-import digitalio
-import random
-import time
-from PIL import Image, ImageDraw, ImageFont
+import os               # Required for running command line functions
+import sys              # Required for loading special modules
+import time             # Required for delays
+import configparser     # Required for ini files
+
+sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/display')
+from menu     import Menu
+
+sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/processes')
+from taskManager     import TaskManager
 
 
-def open(device, draw, image):
-    draw.rectangle((0, 0, device.width, device.height), outline=0, fill=0)
-    draw.ellipse((9,9,55,55), fill=255)
-    draw.ellipse((73,9,119,55), fill=255)
-    device.image(image)
-    device.show()
+def mainMenu(menu, configurationFile):
+    taskManager = TaskManager()
+    config      = configparser.ConfigParser()
+    #loadConfig(config, configurationFile)
+    
+    
+    while True:
+        select = menu.displayMenu(['Launcher', 'About', 'Exit'])
+        if select == 'Launcher':
+            launcherMenu(menu, taskManager)
+        if select == 'About':
+            menu.displayLargeMessage(["      Pi-Bot AI",
+                                      "--------------------------",
+                                      "       V 0.23.4.07",
+                                      " Github: RetroDISTORT",
+                                      "",
+                                      "      [Click to Exit]"])
+        if select == 'Exit':
+            menu.displayOff()
+            return
 
-def close(device, draw, image):
-    draw.rectangle((0, 0, device.width, device.height), outline=0, fill=0)
-    draw.ellipse((9,9,55,55), fill=255)
-    draw.ellipse((73,9,119,55), fill=255)
-    draw.rectangle((0, 0, device.width, 30), outline=0, fill=0) #Top
-    draw.rectangle((0, device.height, device.width, 34), outline=0, fill=0) #Bottom
-    device.image(image)
-    device.show()
-    
-def annoyed(device, draw, image):
-    draw.rectangle((0, 0, device.width, device.height), outline=0, fill=0)
-    draw.ellipse((9,9,55,55), fill=255)
-    draw.ellipse((73,9,119,55), fill=255)
-    draw.rectangle((0, 0, device.width, 30), outline=0, fill=0) #Top
-    device.image(image)
-    device.show()
-    
-def happy(device, draw, image):
-    draw.rectangle((0, 0, device.width, device.height), outline=0, fill=0)
-    draw.ellipse((9,9,55,55), fill=255)
-    draw.ellipse((73,9,119,55), fill=255)
-    draw.rectangle((0, device.height, device.width, 34), outline=0, fill=0) #Bottom
-    device.image(image)
-    device.show()
-    
-def confused_right(device, draw, image):
-    draw.rectangle((0, 0, device.width, device.height), outline=0, fill=0)
-    draw.ellipse((9,9,55,55), fill=255)
-    draw.ellipse((73,9,119,55), fill=255)
-    draw.rectangle((0, 0, device.width/2, 30), outline=0, fill=0) #Top
-    device.image(image)
-    device.show()
-    
-def confused_left(device, draw, image):
-    draw.rectangle((0, 0, device.width, device.height), outline=0, fill=0)
-    draw.ellipse((9,9,55,55), fill=255)
-    draw.ellipse((73,9,119,55), fill=255)
-    draw.rectangle((device.width/2, 0, device.width, 30), outline=0, fill=0) #Top
-    device.image(image)
-    device.show()
 
+def launcherMenu(menu, taskManager):
+    while True:
+        menuOptions  = ['Face Test', 'Done'] 
+        
+        select = menu.displayMenu(menuOptions)
+
+        if select == 'Face Test':
+            taskManager.startTask('Face', 'AI', "python3 /opt/boobot/apps/AI/programs/faces.py")
+            menu.displayLargeMessage(["     Face Test",
+                                      " Simple AI oled test",
+                                      " Starting Soon...",
+                                      " [Click to Exit Test]"])
+            taskManager.killType('Face')
+        if select == 'Done':
+            return
+
+
+        
 def main():
-    WIDTH = 128
-    HEIGHT = 64
-    BORDER = 0
-
-    i2c = busio.I2C(board.SCL, board.SDA)
-    oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3c)
-    oled.contrast(1)
-    image = Image.new('1', (oled.width, oled.height))
-    draw = ImageDraw.Draw(image)
-
-    while(True):
+    configDirectory = "~/.boobot/AI"
+    configFile      = "~/.boobot/WebApp/server.config"
+    templateFile    = "/opt/boobot/apps/WebApp/configuration/server.config"
     
-        time.sleep(random.randint(3, 20))
-        random_number = random.randint(1, 6)
-
-        close(oled, draw, image)
-        time.sleep(.5) #Blink before changing
+    #createConfig(configDirectory, configFile, templateFile)
+    menu = Menu('/opt/boobot/apps/System/fonts/ratchet-clank-psp.ttf', 12)
     
-        if (random_number == 1):
-            open(oled, draw, image)
-        if (random_number == 2):
-            close(oled, draw, image)
-        if (random_number == 3):
-            annoyed(oled, draw, image)
-        if (random_number == 4):
-            happy(oled, draw, image)
-        if (random_number == 5):
-            confused_right(oled, draw, image)
-        if (random_number == 6):
-            confused_left(oled, draw, image)
-            
+    time.sleep(.5)
+    mainMenu(menu, configFile)
+    #mainMenu(menu, templateFile)
+
 
 if __name__ == "__main__":
     main()

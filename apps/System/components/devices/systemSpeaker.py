@@ -26,8 +26,8 @@ class MediaRecorderContext:
 class SystemSpeaker():        
     def __init__(self):
         self.PTIME           = 0.020 # 20ms audio packetization
-        self.RATE            = 44100 #44100#48000 #8000
-        self.SAMPLES         = 960 #int(self.audio_ptime * self.sample_rate)
+        self.RATE            = 44100
+        self.SAMPLES         = 960             #int(self.audio_ptime * self.sample_rate)
         self.FORMAT          = pyaudio.paInt16 #s16
         self.CHANNELS        = 2
         self.INDEX           = 0
@@ -47,10 +47,10 @@ class SystemSpeaker():
                                                       frames_per_buffer   = self.CHUNK
                                                       )
         #thread
-        self.dataLock      = Lock()
-        self.newDataEvent     = Event()
+        self.dataLock              = Lock()
+        self.newDataEvent          = Event()
+        self.playThread            = Thread(target=self.play)
         self.newDataEvent.clear()
-        self.playThread    = Thread(target=self.play)
         self.playThread.start()
 
         

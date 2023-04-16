@@ -60,8 +60,12 @@ class TaskManager:
         return errors
 
 
-    def startTask(self, taskType, taskApplication, taskCommand):
+    def startTask(self, taskType, taskApplication, taskCommand, sudo=False):
         command = "bash -c \"exec -a PiBot:" + taskType + ":" + taskApplication + " " + taskCommand + " & \" "
+        
+        if sudo == True:
+            command = "sudo bash -c \"exec -a PiBot:" + taskType + ":" + taskApplication + " " + taskCommand + " & \" "
+            
         os.system(command)
         return
 
@@ -69,14 +73,26 @@ class TaskManager:
     def listAll(self):
         processList = []
         processes = re.findall(".*PiBot.*\n", os.popen("ps aux").read())
-        
+
         for process in processes:
+
+            processFull  = process
             process      = process.split()
             pid          = process[1]
             cpu          = process[2]
             startTime    = process[8]
-            processType  = process[10].split(":")[1]
-            application  = process[10].split(":")[-1]
-            processList.append([pid, cpu, startTime, processType, application])
+
+            try:
+                if len(processes) < 10 or len(processes[10].split) < 3:
+                    startIndex  = processFull.index("PiBot:")
+                    endIndex    = processFull.find(' ', startIndex)
+                    process[10] = processFull[startIndex : endIndex]
+                    
+                    processType  = process[10].split(":")[1]
+                    application  = process[10].split(":")[-1]
+            
+                    processList.append([pid, cpu, startTime, processType, application])
+            except:
+                pass #Error retrieving getting processType and application
     
         return processList

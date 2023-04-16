@@ -2,9 +2,9 @@ import time
 import sys
 import numpy as np
 
-from struct       import unpack
+from struct import unpack
 from clientSocket import ClientSocket
-from ledToolset   import LedToolset
+from ledToolset import LedToolset
 
 
 def VURGB(ip, port, pixelStep, colorSpeed, subColorSpeed, decay, reset):

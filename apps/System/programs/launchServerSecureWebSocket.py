@@ -3,7 +3,7 @@ import sys
 import logging
 
 sys.path.insert(1, '/opt/boobot/apps/System/components/virtual/server')
-from serverSocket        import ServerSocket
+from serverWebsocket     import ServerWebsocket
 
 sys.path.insert(1, '/opt/boobot/apps/System/components/devices')
 from servoSet            import ServoSet
@@ -14,7 +14,7 @@ from batterySensor       import BatterySensor
 # Server data
 IP             = "" #"localhost"
 CONFIRM        = True        # Send a response to client to notify if the command has completed
-SOCKET_PORT    = 9001
+WEBSOCKET_PORT = 9000
 
 servos        = ServoSet()
 ring          = NotificationRing()
@@ -36,7 +36,6 @@ def execute(message):
     try:
         input = json.loads(message)
     except ValueError:  # includes simplejson.decoder.JSONDecodeError
-        logger("value Error")
         return
 
     if input["device"] == "Server":
@@ -109,7 +108,7 @@ def socketManager():
 
     
 def main():
-    socketManager()
+    ws = ServerWebsocket(IP , WEBSOCKET_PORT, execute, logger)
 
     
 if __name__ == "__main__":

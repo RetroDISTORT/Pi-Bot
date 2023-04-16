@@ -11,6 +11,10 @@ fi
 # Move all the files to the root directory
 echo "Moving files to root directory"
 cp -r ../../boobot  /opt
+
+echo "Creating profile directory .boobot"
+mkdir -p ~/.boobot
+
 read -p "apt-get update & upgrade? Y/n... " -n 1 -r
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
@@ -47,23 +51,6 @@ echo " "
      echo " installation done "
  fi
  echo " "
-
-# Install uv4l
-read -p "Install uv4l? (Causes issues with volume control) Y/n... " -n 1 -r
-if [[ ! $REPLY =~ ^[Nn]$ ]]
-then
-    echo " "
-    echo "Installing uv4l..."
-    curl https://www.linux-projects.org/listing/uv4l_repo/lpkey.asc | sudo apt-key add -
-    echo "deb https://www.linux-projects.org/listing/uv4l_repo/raspbian/stretch stretch main" | sudo tee /etc/apt/sources.list.d/uv4l.list
-    sudo apt-get update
-    sudo apt-get install uv4l uv4l-raspicam uv4l-webrtc
-    echo " "
-    echo "It's recommended to reserve 256MB or more for GPU memory. This can be done in raspi-config"
-    echo "Installation guide from: https://www.linux-projects.org/uv4l/installation/"
-    echo "uv4l installation done "
-fi
-echo " "
 
 # Install retropie
 read -p "Install Retropie? Y/n... " -n 1 -r
